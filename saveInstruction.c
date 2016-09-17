@@ -5,17 +5,6 @@
 void saveinstruction(char *);
 void decodeRegister(char *, char *);
 
-void main()
-{
-    
-    printf("note: \n The instruction that you enter is not considered for now, it can be linked from final function \n    Function works on default instruction that is hardcoded \n     I have printed Instruction register(IR) in each stage.    Final IR will be saved into memory once it is set up");
-	char inputIns[256];	//instruction register
-						//inputIns= "ADD r1, r2"
-	printf("enter instruction \n");
-	scanf("%s", &inputIns[0]); //scan input instruction(for now it is dummy)
-	saveinstruction(inputIns);
-}
-
 void saveinstruction(char *inputIns) //
 {
 	
