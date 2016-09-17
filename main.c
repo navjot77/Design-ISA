@@ -8,13 +8,21 @@ char *checkAndGetArg(int argc, char **arg);
 
 void main(int argc, char **argv)
 {
+    unsigned char memory[MEM_ROWS][WORD_SIZE]; //64kb mem
+    unsigned char regFile[NUM_REG][WORD_SIZE];
 
-    printf("note: \n The instruction that you enter is not considered for now, it can be linked from final function \n    Function works on default instruction that is hardcoded \n     I have printed Instruction register(IR) in each stage.    Final IR will be saved into memory once it is set up");
-    char inputIns[256];	//instruction register
-    //inputIns= "ADD r1, r2"
-    printf("enter instruction \n");
-    scanf("%s", &inputIns[0]); //scan input instruction(for now it is dummy)
-    //saveinstruction(inputIns);
+    unsigned char PC[PC_SIZE];
+    unsigned char memAddr[WORD_SIZE];
+    unsigned char memData[WORD_SIZE];
+    unsigned char flags[WORD_SIZE];
+
+
+//    printf("note: \n The instruction that you enter is not considered for now, it can be linked from final function \n    Function works on default instruction that is hardcoded \n     I have printed Instruction register(IR) in each stage.    Final IR will be saved into memory once it is set up");
+//    char inputIns[256];	//instruction register
+//    //inputIns= "ADD r1, r2"
+//    printf("enter instruction \n");
+//    scanf("%s", &inputIns[0]); //scan input instruction(for now it is dummy)
+//    //saveinstruction(inputIns);
 }
 
 //will get the file name from argv
