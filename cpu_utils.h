@@ -29,7 +29,7 @@
 
 EXEC_INFO initCPU(char *PC);
 void loadAndStoreInstrs(char *fileName, char *memory[MEM_ROWS], EXEC_INFO *info);
-void runProgram(char *PC, char *memAddr, char *memData, char regFile[][WORD_SIZE + 1], char *flags, EXEC_INFO info);
+void runProgram(char **memory, char *PC, char *memAddr, char *memData, char **regFile, char *flags, EXEC_INFO info);
 
 char *ALU(int op, char *opLeft, char *opRight, char *flags, int size);
 char *addBinary (char *opLeft, char *opRight, char *flags, int size);
@@ -39,7 +39,7 @@ char *convertInstrToBin(char *instr);
 
 char *convertToBin(int toConvert, bool isImmVal);
 char *decimalToBinary(int toConvert, int numOfBits);
-int binaryToDecimal(char *binary);
+int binaryToDecimal(char *binary, int size);
 
 
 #endif //DESIGN_ISA_CPU_UTILS_H

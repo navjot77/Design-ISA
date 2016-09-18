@@ -8,7 +8,7 @@
 #include "exec_utils.h"
 
 char *checkAndGetArg(int argc, char **arg);
-void init(char *PC, char *memAddr, char *memData, char *instrReg, char *flags);
+void init(char *PC, char *memAddr, char *memData, char *instrReg, char *flags, char **memory);
 
 void main(int argc, char **argv)
 {
@@ -29,7 +29,7 @@ void main(int argc, char **argv)
         memory[i] = malloc(sizeof(char) * WORD_SIZE + 1);
     }
 
-    init(PC, memAddr, memData, instrReg, flags);
+    init(PC, memAddr, memData, instrReg, flags, memory);
 
     //for testing
     memory[HEAP_SEGMENT] = "00000000000000000000000000000010";
@@ -37,7 +37,8 @@ void main(int argc, char **argv)
     EXEC_INFO info = initCPU(PC); //need to init the PC
     sourceCode = checkAndGetArg(argc, argv);
     loadAndStoreInstrs(sourceCode, memory, &info);
-    runProgram(PC, memAddr, memData, regFile, flags, info);
+    printf("in main %s\n", memory[BOOT_SECTOR]);
+    runProgram(memory, PC, memAddr, memData, regFile, flags, info);
 
 }
 
@@ -55,7 +56,7 @@ char *checkAndGetArg(int argc, char **arg){
     return file;
 }
 
-void init(char *PC, char *memAddr, char *memData, char *instrReg, char *flags) {
+void init(char *PC, char *memAddr, char *memData, char *instrReg, char *flags, char **memory) {
 
     flags[WORD_SIZE] = '\0';
     PC[WORD_SIZE] = '\0';
@@ -68,5 +69,11 @@ void init(char *PC, char *memAddr, char *memData, char *instrReg, char *flags) {
         memAddr[i] = '0';
         memData[i] = '0';
         instrReg[i] = '0';
+    }
+
+    for(int row = MEM_ROWS; row < MEM_ROWS; row++){
+        for(int col = WORD_SIZE; col < WORD_SIZE; col++){
+            memory[row][col] = '0';
+        }
     }
 }

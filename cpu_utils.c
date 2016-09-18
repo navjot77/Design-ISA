@@ -10,7 +10,7 @@
 #include "opcodes.h"
 #include "exec_utils.h"
 
-void loadAndStoreInstrs(char *fileName, char *memory[MEM_ROWS], EXEC_INFO *info){
+void loadAndStoreInstrs(char *fileName, char *memory[], EXEC_INFO *info){
     FILE *fp = NULL;
     char buff[250];
     int memLoc = BOOT_SECTOR;
@@ -23,8 +23,11 @@ void loadAndStoreInstrs(char *fileName, char *memory[MEM_ROWS], EXEC_INFO *info)
 
     while(fgets(buff, 250, fp)) {
         strcpy(memory[memLoc], convertInstrToBin(buff));
+        printf("mem is %s\n", memory[memLoc]);
         memLoc++;
+
     }
+
     info->lines = memLoc - BOOT_SECTOR;
 }
 
@@ -127,12 +130,12 @@ char *decimalToBinary(int toConvert, int numOfBits){
     return binary;
 }
 
-int binaryToDecimal(char *binary) {
+int binaryToDecimal(char *binary, int size) {
     int num = 0;
 
-    for(int i = WORD_SIZE - 1; i >= 0; i--) {
+    for(int i = size - 1; i >= 0; i--) {
         if(binary[i] == '1')
-            num += pow(2, WORD_SIZE - 1 - i);
+            num += pow(2, size - 1 - i);
     }
     return num;
 }
@@ -231,11 +234,18 @@ In response to the read command (with address equal to PC), the memory returns t
 A fraction of a second later, the CPU copies the data from the MDR to the Instruction Register (IR)
 The PC is incremented so that it points to the following instruction in memory. This step prepares the CPU for the next cycle.*/
 //char *ALU(int op, char *opLeft, char *opRight, char *flags, int size) {
-void runProgram(char *PC, char *memAddr, char *memData, char regFile[][WORD_SIZE + 1], char *flags, EXEC_INFO info){
-    strcpy(PC, decimalToBinary(BOOT_SECTOR, 16));
+void runProgram(char **memory, char *PC, char *memAddr, char *memData, char **regFile, char *flags, EXEC_INFO info){
+    char instr[WORD_SIZE + 1];
+    strcpy(PC, decimalToBinary(BOOT_SECTOR, PC_SIZE + 1));
+    printf("bin %s\n", decimalToBinary(BOOT_SECTOR, PC_SIZE + 1));
+    printf("dec %d\n", binaryToDecimal(PC, PC_SIZE));
+    int memLoc;
 
     for(int i = 0; i < info.lines; i++){
         //fetch instr from mem
+        memLoc = binaryToDecimal(PC, PC_SIZE);
+        printf("in mem %s\n", memory[memLoc]);
+        strcpy(instr, memory[memLoc]);
 
         //store in memData
 
