@@ -253,7 +253,7 @@ void runProgram(char **memory, char *PC, char *memAddr, char *memData, char **re
             strcpy(memData, memory[binaryToDecimal(memAddr, WORD_SIZE)]);
             strcpy(regFile[binaryToDecimal(memAddr, WORD_SIZE)], memData);
             printf("LW storing data %d from Memory Address %d to Register $%d\n", binaryToDecimal(memData, WORD_SIZE), binaryToDecimal(memAddr, WORD_SIZE), binaryToDecimal(rt, RT_SIZE));
-
+            printf("Data stored in Register $%d is %d\n",  binaryToDecimal(rt, RT_SIZE), binaryToDecimal(regFile[binaryToDecimal(memAddr, WORD_SIZE)], WORD_SIZE));
         }else if(strncmp(SW, instr, OPCODE_SIZE) == 0){ //MEM[$s + offset] = $t = sw $t, offset($s)
 
             strncpy(rs, instr + OPCODE_SIZE, RS_SIZE);
@@ -265,6 +265,8 @@ void runProgram(char **memory, char *PC, char *memAddr, char *memData, char **re
             strcpy(memData, regFile[binaryToDecimal(rt, RT_SIZE)] );      //grab data to transfer and store in memData
             strcpy(memory[binaryToDecimal(memAddr, WORD_SIZE)], memData);//store in memory location
             printf("SW storing data %d from Register $%d to Memory Address %d\n", binaryToDecimal(memData, WORD_SIZE), binaryToDecimal(rt, RT_SIZE), binaryToDecimal(memAddr, WORD_SIZE));
+            printf("Data stored in Memory Address %d is %d\n",  binaryToDecimal(memAddr, WORD_SIZE), binaryToDecimal(memory[binaryToDecimal(memAddr, WORD_SIZE)], WORD_SIZE));
+
         }
         strcpy(PC, ALU(0, PC, "1", NULL, 16)); //move to next instruction
         printExecutionData(memory, PC, memAddr, memData, regFile, flags, instr, i);
