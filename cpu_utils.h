@@ -9,6 +9,12 @@
 #include <stdbool.h>
 #include "exec_utils.h"
 
+//instruction breakdown
+#define OPCODE_SIZE 6
+#define RS_SIZE 5
+#define RT_SIZE 5
+#define IMM_SIZE 16
+
 //mem split sizes
 #define BOOT_SECTOR 512
 #define TEXT_SEGMENT 100
@@ -40,6 +46,7 @@ char *convertInstrToBin(char *instr);
 char *convertToBin(int toConvert, bool isImmVal);
 char *decimalToBinary(int toConvert, int numOfBits);
 int binaryToDecimal(char *binary, int size);
+
 
 
 #endif //DESIGN_ISA_CPU_UTILS_H

@@ -81,7 +81,7 @@ char *convertInstrToBin(char *instr) {
 
         if(hasOffset) { //has an offset so must convert differently
 
-            rt = convertToBin(atoi(strchr(tokens[1], '$') + 1), false);
+            rs = convertToBin(atoi(strchr(tokens[1], '$') + 1), false);
 
             char *leftParens = strchr(tokens[params], '(');
             *leftParens = '\0';
@@ -90,7 +90,7 @@ char *convertInstrToBin(char *instr) {
             char *rightParens = strchr(leftParens + 1, ')');
             *rightParens = '\0';
             leftParens += 2;
-            rs = convertToBin(atoi(leftParens), false);
+            rt = convertToBin(atoi(leftParens), false);
         }
 
     }else{
@@ -122,11 +122,10 @@ char *decimalToBinary(int toConvert, int numOfBits){
     char *binary = (char *)malloc(sizeof(char) * numOfBits + 1);
 
     binary[numOfBits] = '\0';
-    for(int i = numOfBits - 2; i >= 0; i--){
+    for(int i = numOfBits - 1; i >= 0; i--){
         toConvert & 1 ? (binary[i] = '1') : (binary[i] = '0');
         toConvert >>= 1;
     }
-
     return binary;
 }
 
@@ -236,26 +235,59 @@ The PC is incremented so that it points to the following instruction in memory. 
 //char *ALU(int op, char *opLeft, char *opRight, char *flags, int size) {
 void runProgram(char **memory, char *PC, char *memAddr, char *memData, char **regFile, char *flags, EXEC_INFO info){
     char instr[WORD_SIZE + 1];
-    strcpy(PC, decimalToBinary(BOOT_SECTOR, PC_SIZE + 1));
-    printf("bin %s\n", decimalToBinary(BOOT_SECTOR, PC_SIZE + 1));
+    char rs[RS_SIZE + 1];
+    char rt[RT_SIZE + 1];
+    char imm[IMM_SIZE + 1];
+    char *memData_temp = malloc(sizeof(char) * WORD_SIZE + 1);
+
+    imm[IMM_SIZE] = '\0';
+    rs[RS_SIZE] = '\0';
+    rt[RT_SIZE] = '\0';
+
+    strcpy(PC, decimalToBinary(BOOT_SECTOR, PC_SIZE));
+    printf("bin %s\n", decimalToBinary(BOOT_SECTOR, PC_SIZE));
     printf("dec %d\n", binaryToDecimal(PC, PC_SIZE));
     int memLoc;
 
     for(int i = 0; i < info.lines; i++){
         //fetch instr from mem
         memLoc = binaryToDecimal(PC, PC_SIZE);
-        printf("in mem %s\n", memory[memLoc]);
+//        printf("in mem %s\n", memory[memLoc]);
         strcpy(instr, memory[memLoc]);
 
-        //store in memData
+        //store in memData opcode:6 | rs 5 $2 | rt 5 $1 | im16 = 622 (lw $t, 622($rs)) -->  $t = MEM[$s + offset]
+        if(strncmp(LW, instr, OPCODE_SIZE) == 0){
+            strncpy(rs, instr + OPCODE_SIZE, RS_SIZE);
+            strncpy(rt, instr + OPCODE_SIZE + RS_SIZE, RT_SIZE);
+            strncpy(imm, instr + OPCODE_SIZE + RS_SIZE + RT_SIZE, IMM_SIZE);
 
-        //ir (?)
+            memLoc = binaryToDecimal(regFile[binaryToDecimal(rs, RS_SIZE)], RS_SIZE) + binaryToDecimal(imm, IMM_SIZE);
+            memcpy(memAddr, decimalToBinary(memLoc, WORD_SIZE), WORD_SIZE + 1);
+            memcpy(memData, memory[binaryToDecimal(memAddr, WORD_SIZE)], WORD_SIZE + 1);
+            memcpy(regFile[binaryToDecimal(memAddr, WORD_SIZE)], memData, WORD_SIZE + 1);
 
-        //incr pc
-        strcpy(PC, ALU(0, PC, "1", NULL, 16));
+            printf("memdata %s rf %s\n", memData, regFile[binaryToDecimal(memAddr, WORD_SIZE)]);
 
-        //exec instr
+        }else if(strncmp(SW, instr, OPCODE_SIZE) == 0){ //MEM[$s + offset] = $t = sw $t, offset($s)
 
+            strncpy(rs, instr + OPCODE_SIZE, RS_SIZE);
+            strncpy(rt, instr + OPCODE_SIZE + RS_SIZE, RT_SIZE);
+            strncpy(imm, instr + OPCODE_SIZE + RS_SIZE + RT_SIZE, IMM_SIZE);
+
+            memLoc = binaryToDecimal(regFile[binaryToDecimal(rs, RS_SIZE)], RS_SIZE) + binaryToDecimal(imm, IMM_SIZE);
+            printf("memloc %d\n", memLoc);
+            memcpy(memAddr, decimalToBinary(memLoc, WORD_SIZE), WORD_SIZE + 1);
+            printf("addr %s %s %s\n", memAddr, rt, regFile[6]);
+
+            memcpy(memData, regFile[binaryToDecimal(rt, RT_SIZE)], WORD_SIZE + 1);
+            printf("data to store sw %s %d\n", memData, binaryToDecimal(memAddr, WORD_SIZE));
+            memcpy(memory[662], memData, WORD_SIZE + 1);
+
+            printf("memdata %s rf %s\n", memData, memory[binaryToDecimal(memAddr, WORD_SIZE)]);
+
+        }
+
+        strcpy(PC, ALU(0, PC, "1", NULL, 16)); //move to next instruction
     }
 
 }
