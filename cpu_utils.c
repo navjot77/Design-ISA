@@ -5,6 +5,7 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <mem.h>
+#include <math.h>
 #include "cpu_utils.h"
 #include "opcodes.h"
 
@@ -107,23 +108,35 @@ char *convertInstrToBin(char *instr) {
 unsigned char *convertToBin(int toConvert, bool isImmVal) {
 
     if(!isImmVal){ //not imm so it is an addr
-        unsigned char *addr = (char *)malloc(sizeof(char) * 6);
-        for(int i = 4; i >= 0; i--){
-            toConvert & 1 ? (addr[i] = (unsigned char)'1') : (addr[i] = (unsigned char)'0');
-            toConvert >>= 1;
-        }
-        addr[5] = '\0';
-        return addr;
+        return decimalToBinary(toConvert, 5);
     }else{
-        unsigned char *imm = (char *)malloc(sizeof(char) * 17);
-        for(int i = 15; i >= 0; i--){
-            toConvert & 1 ? (imm[i] = '1') : (imm[i] = '0');
-            toConvert >>= 1;
-        }
-        imm[16] = '\0';
-        return imm;
+        return decimalToBinary(toConvert, 16);
     }
     return NULL;
+}
+
+unsigned char *decimalToBinary(int toConvert, int numOfBits){
+    unsigned char *binary = (unsigned char *)malloc(sizeof(char) * numOfBits + 1);
+
+    binary[numOfBits] = '\0';
+    for(int i = numOfBits - 2; i >= 0; i--){
+        toConvert & 1 ? (binary[i] = '1') : (binary[i] = '0');
+        toConvert >>= 1;
+    }
+
+    return binary;
+}
+
+int binaryToDecimal(char *binary) {
+    int num = 0;
+
+    for(int i = WORD_SIZE - 1; i >= 0; i--) {
+        if(binary[i] == '1')
+            num += pow(2, WORD_SIZE - 1 - i);
+    }
+
+    printf("num is %d\n", num);
+    return num;
 }
 
 //inits the CPU- including inits the PC to initial value

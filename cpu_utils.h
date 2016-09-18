@@ -28,6 +28,8 @@ char *convertInstrToBin(char *instr);
 unsigned char *addBinary(unsigned char *opLeft, unsigned char *opRight);
 
 unsigned char *convertToBin(int toConvert, bool isImmVal);
+unsigned char *decimalToBinary(int toConvert, int numOfBits);
+int binaryToDecimal(char *binary);
 
 
 #endif //DESIGN_ISA_CPU_UTILS_H
