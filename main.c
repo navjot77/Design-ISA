@@ -3,9 +3,8 @@
 //
 #include <stdlib.h>
 #include <stdio.h>
-#include <mem.h>
+#include <string.h>
 #include "cpu_utils.h"
-#include "exec_utils.h"
 
 char *checkAndGetArg(int argc, char **arg);
 void init(char *PC, char *memAddr, char *memData, char *instrReg, char *flags, char **memory, char **regFile);
@@ -39,12 +38,6 @@ void main(int argc, char **argv)
 
     init(PC, memAddr, memData, instrReg, flags, memory, regFile);
 
-    memory[662][WORD_SIZE] = '\0';
-    if(memory[5][WORD_SIZE] == '\0')
-        printf("its there!");
-    for(int i = 0; i < WORD_SIZE + 1; i++)
-        printf("%d %c\n", i, memory[662][i]);
-
     //for testing
     memory[HEAP_SEGMENT] = "00000000000000000000000000000010";
     regFile[6] = "00000000000000000000000000000111";
@@ -52,7 +45,6 @@ void main(int argc, char **argv)
     EXEC_INFO info = initCPU(PC); //need to init the PC
     sourceCode = checkAndGetArg(argc, argv);
     loadAndStoreInstrs(sourceCode, memory, &info);
-    printf("in main %s\n", memory[BOOT_SECTOR]);
     runProgram(memory, PC, memAddr, memData, regFile, flags, info);
 
 }

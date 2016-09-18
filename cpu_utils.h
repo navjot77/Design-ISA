@@ -15,12 +15,15 @@
 #define RT_SIZE 5
 #define IMM_SIZE 16
 
-//mem split sizes
-#define BOOT_SECTOR 512
-#define TEXT_SEGMENT 100
-#define DATA_SEGMENT 50
-#define STACK_SEGMENT 64000 //where the stack begins
-#define HEAP_SEGMENT 662
+//memory start addresses
+#define TEXT_SEGMENT 512    //where text segment begins
+#define DATA_SEGMENT 600
+#define STACK_SEGMENT 63999 //where the stack begins
+#define HEAP_SEGMENT 661    //where heap begins
+
+//memory segment sizes
+#define TEXT_SEGMENT_SIZE DATA_SEGMENT-TEXT_SEGMENT
+#define DATA_SEGMENT_SIZE HEAP_SEGMENT-DATA_SEGMENT
 
 #define WORD_SIZE 32
 #define PC_SIZE 16
@@ -40,13 +43,11 @@ void runProgram(char **memory, char *PC, char *memAddr, char *memData, char **re
 char *ALU(int op, char *opLeft, char *opRight, char *flags, int size);
 char *addBinary (char *opLeft, char *opRight, char *flags, int size);
 char *signExtend(char *value, int size);
-
 char *convertInstrToBin(char *instr);
 
 char *convertToBin(int toConvert, bool isImmVal);
 char *decimalToBinary(int toConvert, int numOfBits);
 int binaryToDecimal(char *binary, int size);
 
-
-
+void printExecutionData(char **memory, char *PC, char *memAddr, char *memData, char **regFile, char *flags, char *instruction, int instrNum);
 #endif //DESIGN_ISA_CPU_UTILS_H

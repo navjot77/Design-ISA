@@ -4,16 +4,15 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <stdio.h>
-#include <mem.h>
 #include <math.h>
+#include <string.h>
 #include "cpu_utils.h"
 #include "opcodes.h"
-#include "exec_utils.h"
 
 void loadAndStoreInstrs(char *fileName, char *memory[], EXEC_INFO *info){
     FILE *fp = NULL;
     char buff[250];
-    int memLoc = BOOT_SECTOR;
+    int memLoc = TEXT_SEGMENT;
 
     fp = fopen(fileName, "r");
     if(fp == NULL) {
@@ -23,12 +22,11 @@ void loadAndStoreInstrs(char *fileName, char *memory[], EXEC_INFO *info){
 
     while(fgets(buff, 250, fp)) {
         strcpy(memory[memLoc], convertInstrToBin(buff));
-        printf("mem is %s\n", memory[memLoc]);
         memLoc++;
 
     }
 
-    info->lines = memLoc - BOOT_SECTOR;
+    info->lines = memLoc - TEXT_SEGMENT;
 }
 
 char *convertInstrToBin(char *instr) {
@@ -103,7 +101,6 @@ char *convertInstrToBin(char *instr) {
     strcat(binInstr, rt);
     strcat(binInstr, immVal);
     binInstr[32] = '\0';
-    printf("rt %s rs %s imm %s\n", rt, rs, immVal);
     return binInstr;
 }
 
@@ -221,38 +218,28 @@ EXEC_INFO initCPU(char *PC) {
 
     PC = BOOT_ADDR;
     info.heap_ptr = HEAP_SEGMENT;
-    info.stack_ptr = STACK_SEGMENT - 1;
+    info.stack_ptr = STACK_SEGMENT;
     info.lines = 0;
 
     return info;
 }
 
-/*The CPU sends PC to the MAR and sends a READ command on the control bus
-In response to the read command (with address equal to PC), the memory returns the data stored at the memory location indicated by PC on the databus
-        The CPU copies the data from the databus into its MDR (also known as MBR, see section Components above)
-A fraction of a second later, the CPU copies the data from the MDR to the Instruction Register (IR)
-The PC is incremented so that it points to the following instruction in memory. This step prepares the CPU for the next cycle.*/
-//char *ALU(int op, char *opLeft, char *opRight, char *flags, int size) {
 void runProgram(char **memory, char *PC, char *memAddr, char *memData, char **regFile, char *flags, EXEC_INFO info){
     char instr[WORD_SIZE + 1];
     char rs[RS_SIZE + 1];
     char rt[RT_SIZE + 1];
     char imm[IMM_SIZE + 1];
-    char *memData_temp = malloc(sizeof(char) * WORD_SIZE + 1);
 
     imm[IMM_SIZE] = '\0';
     rs[RS_SIZE] = '\0';
     rt[RT_SIZE] = '\0';
 
-    strcpy(PC, decimalToBinary(BOOT_SECTOR, PC_SIZE));
-    printf("bin %s\n", decimalToBinary(BOOT_SECTOR, PC_SIZE));
-    printf("dec %d\n", binaryToDecimal(PC, PC_SIZE));
+    strcpy(PC, decimalToBinary(TEXT_SEGMENT, PC_SIZE));
     int memLoc;
 
     for(int i = 0; i < info.lines; i++){
         //fetch instr from mem
         memLoc = binaryToDecimal(PC, PC_SIZE);
-//        printf("in mem %s\n", memory[memLoc]);
         strcpy(instr, memory[memLoc]);
 
         //store in memData opcode:6 | rs 5 $2 | rt 5 $1 | im16 = 622 (lw $t, 622($rs)) -->  $t = MEM[$s + offset]
@@ -262,11 +249,10 @@ void runProgram(char **memory, char *PC, char *memAddr, char *memData, char **re
             strncpy(imm, instr + OPCODE_SIZE + RS_SIZE + RT_SIZE, IMM_SIZE);
 
             memLoc = binaryToDecimal(regFile[binaryToDecimal(rs, RS_SIZE)], RS_SIZE) + binaryToDecimal(imm, IMM_SIZE);
-            memcpy(memAddr, decimalToBinary(memLoc, WORD_SIZE), WORD_SIZE + 1);
-            memcpy(memData, memory[binaryToDecimal(memAddr, WORD_SIZE)], WORD_SIZE + 1);
-            memcpy(regFile[binaryToDecimal(memAddr, WORD_SIZE)], memData, WORD_SIZE + 1);
-
-            printf("memdata %s rf %s\n", memData, regFile[binaryToDecimal(memAddr, WORD_SIZE)]);
+            strcpy(memAddr, decimalToBinary(memLoc, WORD_SIZE));
+            strcpy(memData, memory[binaryToDecimal(memAddr, WORD_SIZE)]);
+            strcpy(regFile[binaryToDecimal(memAddr, WORD_SIZE)], memData);
+            printf("LW storing data %d from Memory Address %d to Register $%d\n", binaryToDecimal(memData, WORD_SIZE), binaryToDecimal(memAddr, WORD_SIZE), binaryToDecimal(rt, RT_SIZE));
 
         }else if(strncmp(SW, instr, OPCODE_SIZE) == 0){ //MEM[$s + offset] = $t = sw $t, offset($s)
 
@@ -275,19 +261,39 @@ void runProgram(char **memory, char *PC, char *memAddr, char *memData, char **re
             strncpy(imm, instr + OPCODE_SIZE + RS_SIZE + RT_SIZE, IMM_SIZE);
 
             memLoc = binaryToDecimal(regFile[binaryToDecimal(rs, RS_SIZE)], RS_SIZE) + binaryToDecimal(imm, IMM_SIZE);
-            printf("memloc %d\n", memLoc);
-            memcpy(memAddr, decimalToBinary(memLoc, WORD_SIZE), WORD_SIZE + 1);
-            printf("addr %s %s %s\n", memAddr, rt, regFile[6]);
-
-            memcpy(memData, regFile[binaryToDecimal(rt, RT_SIZE)], WORD_SIZE + 1);
-            printf("data to store sw %s %d\n", memData, binaryToDecimal(memAddr, WORD_SIZE));
-            memcpy(memory[662], memData, WORD_SIZE + 1);
-
-            printf("memdata %s rf %s\n", memData, memory[binaryToDecimal(memAddr, WORD_SIZE)]);
-
+            strcpy(memAddr, decimalToBinary(memLoc, WORD_SIZE));         //store memory addr to store data in
+            strcpy(memData, regFile[binaryToDecimal(rt, RT_SIZE)] );      //grab data to transfer and store in memData
+            strcpy(memory[binaryToDecimal(memAddr, WORD_SIZE)], memData);//store in memory location
+            printf("SW storing data %d from Register $%d to Memory Address %d\n", binaryToDecimal(memData, WORD_SIZE), binaryToDecimal(rt, RT_SIZE), binaryToDecimal(memAddr, WORD_SIZE));
         }
-
         strcpy(PC, ALU(0, PC, "1", NULL, 16)); //move to next instruction
+        printExecutionData(memory, PC, memAddr, memData, regFile, flags, instr, i);
     }
-
 }
+
+
+void printExecutionData(char **memory, char *PC, char *memAddr, char *memData, char **regFile, char *flags, char *instruction, int instrNum){
+    char instrBuilder[250];
+    char *instrFromMem = memory[TEXT_SEGMENT + instrNum];
+    char rs[RS_SIZE + 1], rt[RT_SIZE + 1], imm[IMM_SIZE + 1];
+    rs[RS_SIZE] = '\0';
+    rs[RT_SIZE] = '\0';
+    imm[IMM_SIZE] = '\0';
+
+    //opcode:6 | rs 5 $2 | rt 5 $1 | im16 = 622 (lw $t, 622($rs))
+    if(strncmp(LW, instrFromMem, OPCODE_SIZE) == 0) {
+        strncpy(rs, instrFromMem + OPCODE_SIZE, RS_SIZE);
+        strncpy(rt, instrFromMem + OPCODE_SIZE + RS_SIZE, RT_SIZE);
+        strncpy(imm, instrFromMem + OPCODE_SIZE + RS_SIZE + RT_SIZE, IMM_SIZE);
+        sprintf(instrBuilder, "%s $%d, %d($%d)", "LW", binaryToDecimal(rt, RT_SIZE), binaryToDecimal(imm, IMM_SIZE), binaryToDecimal(rs, RS_SIZE));
+
+    }else if (strncmp(SW, instrFromMem, OPCODE_SIZE) == 0){
+        strncpy(rs, instrFromMem + OPCODE_SIZE, RS_SIZE);
+        strncpy(rt, instrFromMem + OPCODE_SIZE + RS_SIZE, RT_SIZE);
+        strncpy(imm, instrFromMem + OPCODE_SIZE + RS_SIZE + RT_SIZE, IMM_SIZE);
+        sprintf(instrBuilder, "%s $%d, %d($%d)", "SW", binaryToDecimal(rt, RT_SIZE), binaryToDecimal(imm, IMM_SIZE), binaryToDecimal(rs, RS_SIZE));
+    }
+    printf("%-30s %-40s %-30s\n", "Instruction", "Binary representation", "Program Counter");
+    printf("%-30s %-40s %-30s\n", instrBuilder, instrFromMem, PC);
+    printf("%-30s %-40s %-40s\n", "Memory Address", "Memory Data", "Flags");
+    printf("%-5d                       %5d                                       %-30s\n\n", binaryToDecimal(memAddr, WORD_SIZE), binaryToDecimal(memData, WORD_SIZE), flags); }
