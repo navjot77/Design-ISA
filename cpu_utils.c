@@ -8,11 +8,10 @@
 #include "cpu_utils.h"
 #include "opcodes.h"
 
-void loadAndStoreInstrs(char *fileName, unsigned char **memory){
+void loadAndStoreInstrs(char *fileName, unsigned char *memory[MEM_ROWS]){
     FILE *fp = NULL;
     char buff[250];
-
-    //unsigned char instr[32];
+    int memLoc = BOOT_SECTOR;
 
     fp = fopen(fileName, "r");
     if(fp == NULL) {
@@ -21,15 +20,16 @@ void loadAndStoreInstrs(char *fileName, unsigned char **memory){
     }
 
     while(fgets(buff, 250, fp)) {
-
+        strcpy(memory[memLoc], convertInstrToBin(buff));
+        memLoc++;
     }
 }
 
-unsigned char *convertInstrToBin(char *instr) {
+char *convertInstrToBin(char *instr) {
     char *tokens[5];
     char *token;
     bool hasOffset = false;
-    unsigned char *binInstr = (char *)malloc(sizeof(char) * 32);
+    char *binInstr = (char *)malloc(sizeof(char) * 32 + 1);
     unsigned short instructionType; //R type = 0, I type = 1, J type = 2
 
     char *temp = malloc(strlen(instr) + 1);
@@ -77,7 +77,7 @@ unsigned char *convertInstrToBin(char *instr) {
 
         if(hasOffset) { //has an offset so must convert differently
 
-            rt = convertToBin(strchr(tokens[1], '$') + 1, false);
+            rt = convertToBin(atoi(strchr(tokens[1], '$') + 1), false);
 
             char *leftParens = strchr(tokens[params], '(');
             *leftParens = '\0';
@@ -92,11 +92,14 @@ unsigned char *convertInstrToBin(char *instr) {
     }else{
         //conversion for the rest here
     }
-    //build the converted string here
-    strcat(binInstr, rt);
-    strcat(binInstr, rs);
-    strcat(binInstr, immVal);
 
+    //build the converted string here
+
+    strcat(binInstr, rs);
+    strcat(binInstr, rt);
+    strcat(binInstr, immVal);
+    binInstr[32] = '\0';
+    printf("rt %s rs %s imm %s\n", rt, rs, immVal);
     return binInstr;
 }
 

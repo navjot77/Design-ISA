@@ -12,7 +12,7 @@ void main(int argc, char **argv)
 {
     char *sourceCode;
 
-    unsigned char memory[MEM_ROWS][WORD_SIZE]; //64kb mem
+    unsigned char *memory[MEM_ROWS]; //64kb mem
     unsigned char regFile[NUM_REG][WORD_SIZE];
 
     unsigned char PC[PC_SIZE];
@@ -20,14 +20,15 @@ void main(int argc, char **argv)
     unsigned char memData[WORD_SIZE];
     unsigned char flags[WORD_SIZE];
 
-    char *instr = "LW $2, 4($1)";
+    for(int i = 0; i < MEM_ROWS; i++){
+        memory[i] = malloc(sizeof(char) * WORD_SIZE + 1);
+    }
 
-    //initCPU(PC); //need to init the PC
-    //sourceCode = checkAndGetArg(argc, argv);
-    //loadAndStoreInstrs(sourceCode, memory);
+    initCPU(PC); //need to init the PC
+    sourceCode = checkAndGetArg(argc, argv);
+    loadAndStoreInstrs(sourceCode, memory);
     //runProgram();
 
-    printf("in main: %s\n",convertInstrToBin(instr));
 
 //    printf("note: \n The instruction that you enter is not considered for now, it can be linked from final function \n    Function works on default instruction that is hardcoded \n     I have printed Instruction register(IR) in each stage.    Final IR will be saved into memory once it is set up");
 //    char inputIns[256];	//instruction register
@@ -47,5 +48,6 @@ char *checkAndGetArg(int argc, char **arg){
     }
 
     file = (char *)malloc(sizeof(char) * strlen(arg[1]) + 1);
+    strcpy(file, arg[1]);
     return file;
 }

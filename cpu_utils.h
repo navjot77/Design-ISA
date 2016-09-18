@@ -20,11 +20,11 @@
 #define BOOT_ADDR 0
 
 void initCPU(unsigned char *PC);
-void loadAndStoreInstrs(char *fileName, unsigned char **memory);
+void loadAndStoreInstrs(char *fileName, unsigned char *memory[MEM_ROWS]);
 void runProgram();
 unsigned char *ALU(unsigned char *opLeft, unsigned char *opRight);
 
-unsigned char *convertInstrToBin(char *instr);
+char *convertInstrToBin(char *instr);
 unsigned char *addBinary(unsigned char *opLeft, unsigned char *opRight);
 
 unsigned char *convertToBin(int toConvert, bool isImmVal);
