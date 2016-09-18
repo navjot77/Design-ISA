@@ -24,7 +24,7 @@ void loadAndStoreInstrs(char *fileName, unsigned char **memory);
 void runProgram();
 unsigned char *ALU(unsigned char *opLeft, unsigned char *opRight);
 
-unsigned char *convertInstrToBin(unsigned char *instr);
+unsigned char *convertInstrToBin(char *instr);
 unsigned char *addBinary(unsigned char *opLeft, unsigned char *opRight);
 
 unsigned char *convertToBin(int toConvert, bool isImmVal);
