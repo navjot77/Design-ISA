@@ -39,8 +39,8 @@ void main(int argc, char **argv)
     init(PC, memAddr, memData, instrReg, flags, memory, regFile);
 
     //for testing
-    memory[HEAP_SEGMENT + 1] = "00000000000000000000000000000010\0";
-    regFile[6] = "00000000000000000000000000000111\0";
+    strcpy(memory[HEAP_SEGMENT + 1], "00000000000000000000000000000010");
+    regFile[6] = "00000000000000000000000000000111";
 
     EXEC_INFO info = initCPU(PC); //need to init the PC
     sourceCode = checkAndGetArg(argc, argv);
