@@ -3,7 +3,10 @@
 //
 #include <stdlib.h>
 #include <ctype.h>
+#include <stdio.h>
+#include <mem.h>
 #include "cpu_utils.h"
+#include "opcodes.h"
 
 void loadAndStoreInstrs(char *fileName, unsigned char **memory){
     FILE *fp = NULL;
@@ -25,8 +28,11 @@ void loadAndStoreInstrs(char *fileName, unsigned char **memory){
 unsigned char *convertInstrToBin(unsigned char *instr) {
     char *tokens[4];
     char *token;
-    unsigned char binInstr[32];
+    bool hasOffset = false;
+    unsigned char *binInstr = (char *)malloc(sizeof(char) * 32);
     unsigned short instructionType; //R type = 0, I type = 1, J type = 2
+
+    char *rs = NULL, *rt = NULL, *rd = NULL, *immVal = NULL;
 
     //init tokens array so we know how many args for instr
     for(int i = 0; i < 4; i++)
@@ -51,39 +57,55 @@ unsigned char *convertInstrToBin(unsigned char *instr) {
     if(strcmp(tokens[0], "lw") == 0){
         strcpy(binInstr, LW);
         instructionType = 1;
+        hasOffset = true;
     }else if(strcmp(tokens[0], "sw") == 0){
         strcpy(binInstr, SW);
         instructionType = 1;
+        hasOffset = true;
     }
 
     //convert the rest
     if(instructionType == 1){
-        for(int i = 0; i < params - 1; i++){
-            strcat(binInstr, convertToBin(atoi((const char *) tokens[i + 1][1]), false));
+
+        if(hasOffset) { //has an offset so must convert differently
+            rt = convertToBin(tokens[1][1], false);
+
+            //convert immediate value
+            char *parens = strchr(tokens[params - 1], ')');
+            *parens = '\0';
+            parens = strchr(tokens[params], '(');
+            rs = convertToBin(atoi(parens + 1), true);
+            *parens = '\0';
+
+            //strcat(binInstr, convertToBin(atoi((const char *) immVal), true, count));
+            convertToBin(atoi(tokens[params - 1]), true);
         }
-
-        //convert immediate value
     }else{
-
+        //conversion for the rest here
     }
+    printf("inside: %s\n", binInstr);
     return binInstr;
 }
 
 // converts number to binary rep. if not imm then it is an address so only 5 bits needed
 unsigned char *convertToBin(int toConvert, bool isImmVal) {
-    unsigned char converted[16]; //since largest size we will have is 16b imm
 
     if(!isImmVal){ //not imm so it is an addr
+        unsigned char *addr = (char *)malloc(sizeof(char) * 6);
         for(int i = 4; i >= 0; i--){
-            if(toConvert & 1)
-                converted[i] = (unsigned char)"1";
-            else
-                converted[i] = (unsigned char)"0";
+            toConvert & 1 ? (addr[i] = (unsigned char)'1') : (addr[i] = (unsigned char)'0');
         }
+        addr[5] = '\0';
+        return addr;
     }else{
-
-
+        unsigned char *imm = (char *)malloc(sizeof(char) * 17);
+        for(int i = 15; i >= 0; i--){
+                toConvert & 1 ? (imm[i] = '1') : (imm[i] = '0');
+        }
+        imm[16] = '\0';
+        return imm;
     }
+    return NULL;
 }
 
 //inits the CPU- including inits the PC to initial value

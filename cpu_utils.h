@@ -6,11 +6,7 @@
 #ifndef DESIGN_ISA_CPU_UTILS_H
 #define DESIGN_ISA_CPU_UTILS_H
 
-#include <stdio.h>
-#include <string.h>
-#include <stdint.h>
 #include <stdbool.h>
-#include "opcodes.h"
 
 //mem split sizes
 #define BOOT_SECTOR 512
