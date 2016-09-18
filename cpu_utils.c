@@ -8,8 +8,9 @@
 #include <math.h>
 #include "cpu_utils.h"
 #include "opcodes.h"
+#include "exec_utils.h"
 
-void loadAndStoreInstrs(char *fileName, unsigned char *memory[MEM_ROWS]){
+void loadAndStoreInstrs(char *fileName, char *memory[MEM_ROWS], EXEC_INFO *info){
     FILE *fp = NULL;
     char buff[250];
     int memLoc = BOOT_SECTOR;
@@ -24,6 +25,7 @@ void loadAndStoreInstrs(char *fileName, unsigned char *memory[MEM_ROWS]){
         strcpy(memory[memLoc], convertInstrToBin(buff));
         memLoc++;
     }
+    info->lines = memLoc - BOOT_SECTOR;
 }
 
 char *convertInstrToBin(char *instr) {
@@ -31,7 +33,7 @@ char *convertInstrToBin(char *instr) {
     char *token;
     bool hasOffset = false;
     char *binInstr = (char *)malloc(sizeof(char) * 32 + 1);
-    unsigned short instructionType; //R type = 0, I type = 1, J type = 2
+    unsigned short instructionType = 0; //R type = 0, I type = 1, J type = 2
 
     char *temp = malloc(strlen(instr) + 1);
     strcpy(temp, instr);
@@ -51,11 +53,10 @@ char *convertInstrToBin(char *instr) {
     strcpy(tokens[0], token);
     tokens[0][strlen(token)] = '\0';
 
-    printf("token is %s\n", tokens[0]);
     int params = 0; // we want to know how many params we have for easier processing
 
     //tokenize instr and store in tokens
-    for(int walk = 1; token = strtok(NULL, ",\n "); walk++){
+    for(int walk = 1; (token = strtok(NULL, ",\n ")); walk++){
         tokens[walk] = (char *)malloc(sizeof(char) * strlen(token) + 1);
         strcpy(tokens[walk], token);
         params++;
@@ -64,7 +65,6 @@ char *convertInstrToBin(char *instr) {
     //decode opcode first
     if(strcmp(tokens[0], "lw") == 0){
         strcpy(binInstr, LW);
-        printf("opcode instr %s\n", binInstr);
         instructionType = 1;
         hasOffset = true;
     }else if(strcmp(tokens[0], "sw") == 0){
@@ -105,7 +105,7 @@ char *convertInstrToBin(char *instr) {
 }
 
 // converts number to binary rep. if not imm then it is an address so only 5 bits needed
-unsigned char *convertToBin(int toConvert, bool isImmVal) {
+char *convertToBin(int toConvert, bool isImmVal) {
 
     if(!isImmVal){ //not imm so it is an addr
         return decimalToBinary(toConvert, 5);
@@ -115,8 +115,8 @@ unsigned char *convertToBin(int toConvert, bool isImmVal) {
     return NULL;
 }
 
-unsigned char *decimalToBinary(int toConvert, int numOfBits){
-    unsigned char *binary = (unsigned char *)malloc(sizeof(char) * numOfBits + 1);
+char *decimalToBinary(int toConvert, int numOfBits){
+    char *binary = (char *)malloc(sizeof(char) * numOfBits + 1);
 
     binary[numOfBits] = '\0';
     for(int i = numOfBits - 2; i >= 0; i--){
@@ -134,16 +134,118 @@ int binaryToDecimal(char *binary) {
         if(binary[i] == '1')
             num += pow(2, WORD_SIZE - 1 - i);
     }
-
-    printf("num is %d\n", num);
     return num;
 }
 
-//inits the CPU- including inits the PC to initial value
-void initCPU(unsigned char *PC) {
-    PC = BOOT_ADDR;
+//ADD = 0, MUL = 1, DIV = 2
+char *ALU(int op, char *opLeft, char *opRight, char *flags, int size) {
+    char *left, *right, *result = NULL;
+
+    left = signExtend(opLeft, size);
+    right = signExtend(opRight, size);
+
+    switch(op){
+        case 0:
+            result = addBinary(left, right, flags, size);
+            break;
+        case 1:
+            break;
+        case 2:
+            break;
+    }
+    return result;
 }
 
-void runProgram(){
+char *addBinary (char *opLeft, char *opRight, char *flags, int size){
+    char carry = '0';
+
+    char *sum = (char *)malloc(sizeof(char) * size + 1);
+    if(sum == NULL)
+        exit;
+
+    for(int i = 0; i < size; i++){
+        sum[i] = '0';
+    }
+    sum[size] = '\0';
+
+    for(int pos = size - 1; pos >= 0; pos--){
+        sum[pos] = (opLeft[pos] ^ opRight[pos] ^ carry);
+        carry = (opLeft[pos] & opRight[pos]) | (opRight[pos] & carry) | (opLeft[pos] & carry);
+    }
+
+    //don't want to set flags for PC increment
+    if(flags) {
+        if (carry)
+            flags[OVERFLOW_FLAG] = '1';
+        else flags[OVERFLOW_FLAG] = '0';
+
+        for (int i = 0; i < WORD_SIZE; i++) {
+            if (sum[i] == '1') {
+                flags[ZERO_FLAG] = '0';
+                break;
+            }
+            flags[ZERO_FLAG] = '1';
+        }
+    }
+    return sum;
+}
+
+char *signExtend(char *value, int size){
+
+    if(strlen(value) == size)
+        return value;
+
+    char *extVal = (char *)malloc(sizeof(char) * size + 1);
+    if(extVal == NULL)
+        exit;
+
+    for(int i = 0; i < size; i++)
+        extVal[i] = '0';
+
+    extVal[size] = '\0';
+
+    int count = size - 1;
+    for(int i = strlen(value) - 1; i >= 0; i--){
+        extVal[count] = value[i];
+        count--;
+    }
+
+    return extVal;
+}
+
+//inits the CPU- including inits the PC to initial value
+EXEC_INFO initCPU(char *PC) {
+    EXEC_INFO info;
+
+    PC = BOOT_ADDR;
+    info.heap_ptr = HEAP_SEGMENT;
+    info.stack_ptr = STACK_SEGMENT - 1;
+    info.lines = 0;
+
+    return info;
+}
+
+/*The CPU sends PC to the MAR and sends a READ command on the control bus
+In response to the read command (with address equal to PC), the memory returns the data stored at the memory location indicated by PC on the databus
+        The CPU copies the data from the databus into its MDR (also known as MBR, see section Components above)
+A fraction of a second later, the CPU copies the data from the MDR to the Instruction Register (IR)
+The PC is incremented so that it points to the following instruction in memory. This step prepares the CPU for the next cycle.*/
+//char *ALU(int op, char *opLeft, char *opRight, char *flags, int size) {
+void runProgram(char *PC, char *memAddr, char *memData, char regFile[][WORD_SIZE + 1], char *flags, EXEC_INFO info){
+    strcpy(PC, decimalToBinary(BOOT_SECTOR, 16));
+
+    for(int i = 0; i < info.lines; i++){
+        //fetch instr from mem
+
+        //store in memData
+
+        //ir (?)
+
+        //incr pc
+        strcpy(PC, ALU(0, PC, "1", NULL, 16));
+
+        //exec instr
+
+    }
 
 }

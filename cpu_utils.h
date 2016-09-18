@@ -7,10 +7,14 @@
 #define DESIGN_ISA_CPU_UTILS_H
 
 #include <stdbool.h>
+#include "exec_utils.h"
 
 //mem split sizes
 #define BOOT_SECTOR 512
-
+#define TEXT_SEGMENT 100
+#define DATA_SEGMENT 50
+#define STACK_SEGMENT 64000 //where the stack begins
+#define HEAP_SEGMENT 662
 
 #define WORD_SIZE 32
 #define PC_SIZE 16
@@ -19,16 +23,22 @@
 
 #define BOOT_ADDR 0
 
-void initCPU(unsigned char *PC);
-void loadAndStoreInstrs(char *fileName, unsigned char *memory[MEM_ROWS]);
-void runProgram();
-unsigned char *ALU(unsigned char *opLeft, unsigned char *opRight);
+//flag defines
+#define OVERFLOW_FLAG 1
+#define ZERO_FLAG 0
+
+EXEC_INFO initCPU(char *PC);
+void loadAndStoreInstrs(char *fileName, char *memory[MEM_ROWS], EXEC_INFO *info);
+void runProgram(char *PC, char *memAddr, char *memData, char regFile[][WORD_SIZE + 1], char *flags, EXEC_INFO info);
+
+char *ALU(int op, char *opLeft, char *opRight, char *flags, int size);
+char *addBinary (char *opLeft, char *opRight, char *flags, int size);
+char *signExtend(char *value, int size);
 
 char *convertInstrToBin(char *instr);
-unsigned char *addBinary(unsigned char *opLeft, unsigned char *opRight);
 
-unsigned char *convertToBin(int toConvert, bool isImmVal);
-unsigned char *decimalToBinary(int toConvert, int numOfBits);
+char *convertToBin(int toConvert, bool isImmVal);
+char *decimalToBinary(int toConvert, int numOfBits);
 int binaryToDecimal(char *binary);
 
 

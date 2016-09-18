@@ -5,40 +5,43 @@
 #include <stdio.h>
 #include <mem.h>
 #include "cpu_utils.h"
+#include "exec_utils.h"
 
 char *checkAndGetArg(int argc, char **arg);
+void init(char *PC, char *memAddr, char *memData, char *instrReg, char *flags);
 
 void main(int argc, char **argv)
 {
     char *sourceCode;
 
-    unsigned char *memory[MEM_ROWS]; //64kb mem
-    unsigned char regFile[NUM_REG][WORD_SIZE];
+    //WORD_SIZE + 1 for /0 for debugging and printing
+    char *memory[MEM_ROWS]; //64kb mem
+    char regFile[NUM_REG][WORD_SIZE + 1];
 
-    unsigned char PC[PC_SIZE];
-    unsigned char memAddr[WORD_SIZE];
-    unsigned char memData[WORD_SIZE];
-    unsigned char flags[WORD_SIZE];
+    char PC[PC_SIZE + 1];
+    char memAddr[WORD_SIZE + 1];
+    char memData[WORD_SIZE + 1];
+    char instrReg[WORD_SIZE + 1];
+    char flags[WORD_SIZE + 1];
 
+    //must malloc separately since we can't alloc more than 64kb in one go
     for(int i = 0; i < MEM_ROWS; i++){
         memory[i] = malloc(sizeof(char) * WORD_SIZE + 1);
     }
 
-    initCPU(PC); //need to init the PC
+    init(PC, memAddr, memData, instrReg, flags);
+
+    //for testing
+    memory[HEAP_SEGMENT] = "00000000000000000000000000000010";
+
+    EXEC_INFO info = initCPU(PC); //need to init the PC
     sourceCode = checkAndGetArg(argc, argv);
-    loadAndStoreInstrs(sourceCode, memory);
-    //runProgram();
+    loadAndStoreInstrs(sourceCode, memory, &info);
+    runProgram(PC, memAddr, memData, regFile, flags, info);
 
-
-//    printf("note: \n The instruction that you enter is not considered for now, it can be linked from final function \n    Function works on default instruction that is hardcoded \n     I have printed Instruction register(IR) in each stage.    Final IR will be saved into memory once it is set up");
-//    char inputIns[256];	//instruction register
-//    //inputIns= "ADD r1, r2"
-//    printf("enter instruction \n");
-//    scanf("%s", &inputIns[0]); //scan input instruction(for now it is dummy)
-//    //saveinstruction(inputIns);
 }
 
-//will get the file name from argv
+//will get the file name from arg
 char *checkAndGetArg(int argc, char **arg){
     char *file;
 
@@ -50,4 +53,20 @@ char *checkAndGetArg(int argc, char **arg){
     file = (char *)malloc(sizeof(char) * strlen(arg[1]) + 1);
     strcpy(file, arg[1]);
     return file;
+}
+
+void init(char *PC, char *memAddr, char *memData, char *instrReg, char *flags) {
+
+    flags[WORD_SIZE] = '\0';
+    PC[WORD_SIZE] = '\0';
+    memAddr[WORD_SIZE] = '\0';
+    memData[WORD_SIZE] = '\0';
+    instrReg[WORD_SIZE] = '\0';
+
+    for(int i = 0; i < WORD_SIZE; i++) {
+        flags[i] = '0';
+        memAddr[i] = '0';
+        memData[i] = '0';
+        instrReg[i] = '0';
+    }
 }
