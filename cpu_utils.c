@@ -251,9 +251,9 @@ void runProgram(char **memory, char *PC, char *memAddr, char *memData, char **re
             memLoc = binaryToDecimal(regFile[binaryToDecimal(rs, RS_SIZE)], RS_SIZE) + binaryToDecimal(imm, IMM_SIZE);
             strcpy(memAddr, decimalToBinary(memLoc, WORD_SIZE));
             strcpy(memData, memory[binaryToDecimal(memAddr, WORD_SIZE)]);
-            strcpy(regFile[binaryToDecimal(memAddr, WORD_SIZE)], memData);
+            strcpy(regFile[binaryToDecimal(rt, RT_SIZE)], memData);
             printf("LW storing data %d from Memory Address %d to Register $%d\n", binaryToDecimal(memData, WORD_SIZE), binaryToDecimal(memAddr, WORD_SIZE), binaryToDecimal(rt, RT_SIZE));
-            printf("Data stored in Register $%d is %d\n",  binaryToDecimal(rt, RT_SIZE), binaryToDecimal(regFile[binaryToDecimal(memAddr, WORD_SIZE)], WORD_SIZE));
+            printf("Data stored in Register $%d is %d\n",  binaryToDecimal(rt, RT_SIZE), binaryToDecimal(regFile[binaryToDecimal(rt, RT_SIZE)], WORD_SIZE));
         }else if(strncmp(SW, instr, OPCODE_SIZE) == 0){ //MEM[$s + offset] = $t = sw $t, offset($s)
 
             strncpy(rs, instr + OPCODE_SIZE, RS_SIZE);
@@ -298,4 +298,11 @@ void printExecutionData(char **memory, char *PC, char *memAddr, char *memData, c
     printf("%-30s %-40s %-30s\n", "Instruction", "Binary representation", "Program Counter");
     printf("%-30s %-40s %-30s\n", instrBuilder, instrFromMem, PC);
     printf("%-30s %-40s %-40s\n", "Memory Address", "Memory Data", "Flags");
-    printf("%-5d                       %5d                                       %-30s\n\n", binaryToDecimal(memAddr, WORD_SIZE), binaryToDecimal(memData, WORD_SIZE), flags); }
+    printf("%-5d                       %5d                                       %-30s\n\n", binaryToDecimal(memAddr, WORD_SIZE), binaryToDecimal(memData, WORD_SIZE), flags);
+
+    printf("\n %-30s      %-30s\n", "Register name", "Data");
+    for(int i = 0 ; i < NUM_REG; i++) {
+        printf("\t$%d \t\t%-20s\n", i, regFile[i]);
+    }
+    printf("********************************************************************************************\n");
+}
