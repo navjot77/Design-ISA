@@ -7,21 +7,20 @@
 #include "cpu_utils.h"
 
 char *checkAndGetArg(int argc, char **arg);
-void init(char *PC, char *memAddr, char *memData, char *instrReg, char *flags, char **memory, char **regFile);
+void init();
+
+char PC[PC_SIZE + 1];
+char memAddr[WORD_SIZE + 1];
+char memData[WORD_SIZE + 1];
+char instrReg[WORD_SIZE + 1];
+char flags[WORD_SIZE + 1];
+
+char *memory[MEM_ROWS]; //64kb mem
+char *regFile[NUM_REG];
 
 void main(int argc, char **argv)
 {
     char *sourceCode;
-
-    //WORD_SIZE + 1 for /0 for debugging and printing
-    char *memory[MEM_ROWS]; //64kb mem
-    char *regFile[NUM_REG];
-
-    char PC[PC_SIZE + 1];
-    char memAddr[WORD_SIZE + 1];
-    char memData[WORD_SIZE + 1];
-    char instrReg[WORD_SIZE + 1];
-    char flags[WORD_SIZE + 1];
 
     //must malloc separately since we can't alloc more than 64kb in one go
     for(int i = 0; i < MEM_ROWS; i++){
@@ -36,7 +35,7 @@ void main(int argc, char **argv)
             exit;
     }
 
-    init(PC, memAddr, memData, instrReg, flags, memory, regFile);
+    init();
 
     //for testing
     strcpy(memory[HEAP_SEGMENT + 1], "00000000000000000000000000000010");
@@ -44,8 +43,8 @@ void main(int argc, char **argv)
 
     EXEC_INFO info = initCPU(PC); //need to init the PC
     sourceCode = checkAndGetArg(argc, argv);
-    loadAndStoreInstrs(sourceCode, memory, &info);
-    runProgram(memory, PC, memAddr, memData, regFile, flags, info);
+    loadAndStoreInstrs(sourceCode, &info);
+    runProgram(info);
 
 }
 
@@ -63,7 +62,7 @@ char *checkAndGetArg(int argc, char **arg){
     return file;
 }
 
-void init(char *PC, char *memAddr, char *memData, char *instrReg, char *flags, char **memory, char **regFile) {
+void init() {
 
     flags[WORD_SIZE] = '\0';
     PC[WORD_SIZE] = '\0';

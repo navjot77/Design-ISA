@@ -9,7 +9,7 @@
 #include "cpu_utils.h"
 #include "opcodes.h"
 
-void loadAndStoreInstrs(char *fileName, char *memory[], EXEC_INFO *info){
+void loadAndStoreInstrs(char *fileName, EXEC_INFO *info){
     FILE *fp = NULL;
     char buff[250];
     int memLoc = TEXT_SEGMENT;
@@ -137,7 +137,8 @@ int binaryToDecimal(char *binary, int size) {
 }
 
 //ADD = 0, MUL = 1, DIV = 2
-char *ALU(int op, char *opLeft, char *opRight, char *flags, int size) {
+//setFlags if 0 -> do not change the flags
+char *ALU(int op, char *opLeft, char *opRight, int size, int setFlags) {
     char *left, *right, *result = NULL;
 
     left = signExtend(opLeft, size);
@@ -145,7 +146,7 @@ char *ALU(int op, char *opLeft, char *opRight, char *flags, int size) {
 
     switch(op){
         case 0:
-            result = addBinary(left, right, flags, size);
+            result = addBinary(left, right, size, setFlags);
             break;
         case 1:
             break;
@@ -155,7 +156,7 @@ char *ALU(int op, char *opLeft, char *opRight, char *flags, int size) {
     return result;
 }
 
-char *addBinary (char *opLeft, char *opRight, char *flags, int size){
+char *addBinary (char *opLeft, char *opRight, int size, int setFlags){
     char carry = '0';
 
     char *sum = (char *)malloc(sizeof(char) * size + 1);
@@ -173,7 +174,7 @@ char *addBinary (char *opLeft, char *opRight, char *flags, int size){
     }
 
     //don't want to set flags for PC increment
-    if(flags) {
+    if(setFlags) {
         if (carry)
             flags[OVERFLOW_FLAG] = '1';
         else flags[OVERFLOW_FLAG] = '0';
@@ -213,10 +214,10 @@ char *signExtend(char *value, int size){
 }
 
 //inits the CPU- including inits the PC to initial value
-EXEC_INFO initCPU(char *PC) {
+EXEC_INFO initCPU() {
     EXEC_INFO info;
 
-    PC = BOOT_ADDR;
+    strcpy(PC, BOOT_ADDR); //TODO figure out why it crashes here
     info.heap_ptr = HEAP_SEGMENT;
     info.stack_ptr = STACK_SEGMENT;
     info.lines = 0;
@@ -224,7 +225,7 @@ EXEC_INFO initCPU(char *PC) {
     return info;
 }
 
-void runProgram(char **memory, char *PC, char *memAddr, char *memData, char **regFile, char *flags, EXEC_INFO info){
+void runProgram(EXEC_INFO info){
     char instr[WORD_SIZE + 1];
     char rs[RS_SIZE + 1];
     char rt[RT_SIZE + 1];
@@ -268,13 +269,13 @@ void runProgram(char **memory, char *PC, char *memAddr, char *memData, char **re
             printf("Data stored in Memory Address %d is %d\n",  binaryToDecimal(memAddr, WORD_SIZE), binaryToDecimal(memory[binaryToDecimal(memAddr, WORD_SIZE)], WORD_SIZE));
 
         }
-        strcpy(PC, ALU(0, PC, "1", NULL, 16)); //move to next instruction
-        printExecutionData(memory, PC, memAddr, memData, regFile, flags, instr, i);
+        strcpy(PC, ALU(0, PC, "1", 16, 0)); //move to next instruction
+        printExecutionData(i);
     }
 }
 
 
-void printExecutionData(char **memory, char *PC, char *memAddr, char *memData, char **regFile, char *flags, char *instruction, int instrNum){
+void printExecutionData(int instrNum){
     char instrBuilder[250];
     char *instrFromMem = memory[TEXT_SEGMENT + instrNum];
     char rs[RS_SIZE + 1], rt[RT_SIZE + 1], imm[IMM_SIZE + 1];

@@ -30,18 +30,28 @@
 #define MEM_ROWS 64000 //number of rows for 16b addressing with 32b WORD 64KB total memory
 #define NUM_REG 8
 
-#define BOOT_ADDR 0
+#define BOOT_ADDR "0000000000000000"
 
 //flag defines
 #define OVERFLOW_FLAG 1
 #define ZERO_FLAG 0
 
-EXEC_INFO initCPU(char *PC);
-void loadAndStoreInstrs(char *fileName, char *memory[MEM_ROWS], EXEC_INFO *info);
-void runProgram(char **memory, char *PC, char *memAddr, char *memData, char **regFile, char *flags, EXEC_INFO info);
+//WORD_SIZE + 1 for /0 for debugging and printing
+extern char *memory[MEM_ROWS]; //64kb mem
+extern char *regFile[NUM_REG];
 
-char *ALU(int op, char *opLeft, char *opRight, char *flags, int size);
-char *addBinary (char *opLeft, char *opRight, char *flags, int size);
+extern char PC[PC_SIZE + 1];
+extern char memAddr[WORD_SIZE + 1];
+extern char memData[WORD_SIZE + 1];
+extern char instrReg[WORD_SIZE + 1];
+extern char flags[WORD_SIZE + 1];
+
+EXEC_INFO initCPU();
+void loadAndStoreInstrs(char *fileName, EXEC_INFO *info);
+void runProgram(EXEC_INFO info);
+
+char *ALU(int op, char *opLeft, char *opRight, int size, int setFlags);
+char *addBinary (char *opLeft, char *opRight, int size, int setFlags);
 char *signExtend(char *value, int size);
 char *convertInstrToBin(char *instr);
 
@@ -49,5 +59,5 @@ char *convertToBin(int toConvert, bool isImmVal);
 char *decimalToBinary(int toConvert, int numOfBits);
 int binaryToDecimal(char *binary, int size);
 
-void printExecutionData(char **memory, char *PC, char *memAddr, char *memData, char **regFile, char *flags, char *instruction, int instrNum);
+void printExecutionData(int instrNum);
 #endif //DESIGN_ISA_CPU_UTILS_H
