@@ -99,7 +99,7 @@ char *convertInstrToBin(char *instr) {
 
     strcat(binInstr, rs);
     strcat(binInstr, rt);
-    strcat(binInstr, immVal);s
+    strcat(binInstr, immVal);
     binInstr[32] = '\0';
     return binInstr;
 }
