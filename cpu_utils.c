@@ -89,18 +89,18 @@ char *convertInstrToBin(char *instr) {
             *rightParens = '\0';
             leftParens += 2;
             rs = convertToBin(atoi(leftParens), false);
+
+            //build the converted string here
+            strcat(binInstr, rs);
+            strcat(binInstr, rt);
+            strcat(binInstr, immVal);
+            binInstr[32] = '\0';
         }
 
     }else{
         //conversion for the rest here
     }
 
-    //build the converted string here
-
-    strcat(binInstr, rs);
-    strcat(binInstr, rt);
-    strcat(binInstr, immVal);
-    binInstr[32] = '\0';
     return binInstr;
 }
 
@@ -217,7 +217,7 @@ char *signExtend(char *value, int size){
 EXEC_INFO initCPU() {
     EXEC_INFO info;
 
-    strcpy(PC, BOOT_ADDR); //TODO figure out why it crashes here
+    strcpy(PC, BOOT_ADDR);
     info.heap_ptr = HEAP_SEGMENT;
     info.stack_ptr = STACK_SEGMENT;
     info.lines = 0;
