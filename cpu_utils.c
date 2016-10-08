@@ -79,7 +79,7 @@ char *convertInstrToBin(char *instr) {
 
         if(hasOffset) { //has an offset so must convert differently
 
-            rs = convertToBin(atoi(strchr(tokens[1], '$') + 1), false);
+            rt= convertToBin(atoi(strchr(tokens[1], '$') + 1), false);
 
             char *leftParens = strchr(tokens[params], '(');
             *leftParens = '\0';
@@ -88,7 +88,7 @@ char *convertInstrToBin(char *instr) {
             char *rightParens = strchr(leftParens + 1, ')');
             *rightParens = '\0';
             leftParens += 2;
-            rt = convertToBin(atoi(leftParens), false);
+            rs = convertToBin(atoi(leftParens), false);
         }
 
     }else{
@@ -99,7 +99,7 @@ char *convertInstrToBin(char *instr) {
 
     strcat(binInstr, rs);
     strcat(binInstr, rt);
-    strcat(binInstr, immVal);
+    strcat(binInstr, immVal);s
     binInstr[32] = '\0';
     return binInstr;
 }
@@ -280,7 +280,7 @@ void printExecutionData(int instrNum){
     char *instrFromMem = memory[TEXT_SEGMENT + instrNum];
     char rs[RS_SIZE + 1], rt[RT_SIZE + 1], imm[IMM_SIZE + 1];
     rs[RS_SIZE] = '\0';
-    rs[RT_SIZE] = '\0';
+    rt[RT_SIZE] = '\0';
     imm[IMM_SIZE] = '\0';
 
     //opcode:6 | rs 5 $2 | rt 5 $1 | im16 = 622 (lw $t, 622($rs))
