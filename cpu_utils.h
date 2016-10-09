@@ -61,7 +61,7 @@ char *addBinary (char *opLeft, char *opRight, int size, int setFlags);
 char *subBinary (char *opLeft, char *opRight, int size, int setFlags);
 char *mulBinary(char* left, char* right, int size, int setFlags);
 char *modBinary(char *left, char *right, int size, int setFlags);
-char *divBinary(char *left, char *right, int size, int setFlags);
+char *divBinary(char *left, char *right, char **remainder, int size, int setFlags);
 
 char *leftShift(char* input, int size);
 char *rightShift(char* input, int size);

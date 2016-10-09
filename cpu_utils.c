@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <limits.h>
 #include "cpu_utils.h"
 #include "opcodes.h"
 
@@ -86,6 +87,12 @@ char *convertInstrToBin(char *instr) {
         strcpy(binInstr + OPCODE_SIZE, genRTypeInstr(tokens));
     } else if(strcmp(tokens[0], "mul") == 0){
         strcpy(binInstr, MUL);
+        strcpy(binInstr + OPCODE_SIZE, genRTypeInstr(tokens));
+    } else if(strcmp(tokens[0], "div") == 0){
+        strcpy(binInstr, DIV);
+        strcpy(binInstr + OPCODE_SIZE, genRTypeInstr(tokens));
+    } else if(strcmp(tokens[0], "mod") == 0){
+        strcpy(binInstr, MOD);
         strcpy(binInstr + OPCODE_SIZE, genRTypeInstr(tokens));
     }
 
@@ -202,6 +209,7 @@ char *ALU(int op, char *opLeft, char *opRight, int size, int setFlags) {
             result = subBinary(left, right, size, setFlags);
             break;
         case 2:
+            result = divBinary(left, right, NULL, size, setFlags);
             break;
         case 3:
             result = modBinary(left, right, size, setFlags);
@@ -240,9 +248,10 @@ char *addBinary (char *opLeft, char *opRight, int size, int setFlags){
     }
     //don't want to set flags for PC increment
     if(setFlags) {
-        if (carry == '1')
+        if (carry == '1') {
             flags[OVERFLOW_FLAG] = '1';
-        else flags[OVERFLOW_FLAG] = '0';
+            printf("OVERFLOW ON INSTRUCTION\n");
+        }else flags[OVERFLOW_FLAG] = '0';
 
         for (int i = 0; i < WORD_SIZE; i++) {
             if (sum[i] == '1') {
@@ -269,7 +278,6 @@ char *decimalToComplementBinary(int toConvert, int numOfBits){
            toConvert & 1 ? (binary[i] = '0') : (binary[i] = '1');
            toConvert >>= 1;
     }
-
     return binary;
 }
 
@@ -481,7 +489,14 @@ void runProgram(EXEC_INFO info){
 
             result = ALU(3, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
             strcpy(regFile[binaryToDecimal(rd, 10)], result);
+        }else if(strncmp(DIV, instr, OPCODE_SIZE) == 0) {
+            char *result;
+            strncpy(rd, instr + OPCODE_SIZE, 10);
+            strncpy(rs, instr + OPCODE_SIZE + 10, 8);
+            strncpy(rt, instr + OPCODE_SIZE + 10 + 8, 8);
 
+            result = ALU(2, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
+            strcpy(regFile[binaryToDecimal(rd, 10)], result);
         }
 
         strcpy(PC, ALU(0, PC, "1", 16, 0)); //move to next instruction
@@ -549,13 +564,9 @@ void printExecutionData(int instrNum){
         strcpy(instrBuilder, buildInstrForRTypePrint(instrFromMem, "MUL"));
 
     }else if(strncmp(MOD, instrFromMem, OPCODE_SIZE) == 0) {
-        char *result;
-        strncpy(rd, instrFromMem + OPCODE_SIZE, 10);
-        strncpy(rs, instrFromMem + OPCODE_SIZE + 10, 8);
-        strncpy(rt, instrFromMem + OPCODE_SIZE + 10 + 8, 8);
-
-        sprintf(instrBuilder, "%s $%d, $%d, $%d", "MUL", binaryToDecimal(rd, 10), binaryToDecimal(rs, 8), binaryToDecimal(rt, 8));
-
+        strcpy(instrBuilder, buildInstrForRTypePrint(instrFromMem, "MOD"));
+    }else if(strncmp(DIV, instrFromMem, OPCODE_SIZE) == 0) {
+        strcpy(instrBuilder, buildInstrForRTypePrint(instrFromMem, "DIV"));
     }
 
     printf("%-30s %-40s %-30s\n", "Instruction", "Binary representation", "Program Counter");
@@ -578,15 +589,21 @@ char* mulBinary(char* left, char* right, int size, int setFlags)
     int op1 = binaryToDecimal(left, size);
     int op2 = binaryToDecimal(right, size);
 
-    int result = 0;
+    long result = 0;
+
+    if((op1 == INT_MIN && (op2 != 0 || op2 != '1')) || (op2 == INT_MIN && (op1 != 0 || op1 != '1')) && setFlags) { //very small # is a very large unsigned #
+        flags[OVERFLOW_FLAG] = '1';
+        printf("OVERFLOW ON INSTRUCTION\n");
+    }else flags[OVERFLOW_FLAG] = '0';
 
     while(op2 != 0) {
-        if(op2 & 01) {
-            result = binaryToDecimal(addBinary(decimalToBinary(result, WORD_SIZE), decimalToBinary(op1, WORD_SIZE), WORD_SIZE, 0), WORD_SIZE);
+        if(op2 & 01) { //if odd
+            result = binaryToDecimal(addBinary(decimalToBinary(result, WORD_SIZE), decimalToBinary(op1, WORD_SIZE), WORD_SIZE, setFlags), WORD_SIZE);
         }
         op1 = op1 << 1;
         op2 = op2 >> 1;
     }
+
     strcpy(mul, decimalToBinary(result, WORD_SIZE));
     return mul;
 }
@@ -612,16 +629,56 @@ char* rightShift(char* input, int size)
 
 char* modBinary(char* left, char* right, int size, int setFlags)
 {
-    char qt[WORD_SIZE + 1];  //quotient and result
-    qt[WORD_SIZE] = '\0';
+    char *remainder = malloc(WORD_SIZE + 1);
+    mallocErrorCheck(remainder);
+    remainder[WORD_SIZE] = '\0';
 
+    divBinary(left, right, &remainder, WORD_SIZE, setFlags);
+
+    return remainder;
+}
+
+char *divBinary(char *left, char *right, char **remainder, int size, int setFlags){
     char *result = malloc(WORD_SIZE + 1);
     mallocErrorCheck(result);
-    result[WORD_SIZE] = '\0';
+    int curr = 1, res = 0;
 
-    strcpy(qt, divBinary(left, right, size, setFlags)); //to get quotient when  -> left/right
-    result= mulBinary(qt, right, size, setFlags);   //multiply quotient with right  -> (left/right)*right
-    result= subBinary(left, result, size, setFlags);    //subtract the result we got from left  -> left-((left/right)*right)
+    int dividend = binaryToDecimal(left, WORD_SIZE);
+    int divisor = binaryToDecimal(right, WORD_SIZE);
+
+    int denom = divisor;
+
+    while(denom <= dividend){
+        denom <<= 1;
+        curr <<= 1;
+    }
+
+    denom >>= 1;
+    curr >>= 1;
+
+    while(curr != 0){
+        if(dividend >= denom){
+            dividend -= denom;
+            res |= curr;
+        }
+        curr >>= 1;
+        denom >>= 1;
+    }
+
+    strcpy(result, decimalToBinary(res, WORD_SIZE));
+
+    //set flags
+    if(remainder != NULL) { //this is not the modulus function so no need to save remainder
+        strcpy(*remainder, decimalToBinary(dividend, WORD_SIZE));
+        if(dividend == 0)
+            flags[ZERO_FLAG] = '1';
+        else flags[ZERO_FLAG] = '0';
+    }else{
+        if(res == 0)
+            flags[ZERO_FLAG] = '1';
+        else flags[ZERO_FLAG] = '0';
+    }
+
     return result;
 }
 

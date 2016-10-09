@@ -8,7 +8,6 @@
 //I Types
 const char *LW = "100011";
 const char *SW = "101011";
-const char *ADDI = "100001";
 const char *LD = "100010";
 const char *ST = "100100";
 
