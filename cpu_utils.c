@@ -357,7 +357,15 @@ void runProgram(EXEC_INFO info){
 
             result = ALU(0, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
             strcpy(regFile[binaryToDecimal(rd, 10)], result);
-        }
+        }else if(strncmp(MUL, instr, OPCODE_SIZE) == 0) { //MEM[$s + offset] = $t = sw $t, offset($s)
+        char *result;
+        strncpy(rd, instr + OPCODE_SIZE, 10);
+        strncpy(rs, instr + OPCODE_SIZE + 10, 8);
+        strncpy(rt, instr + OPCODE_SIZE + 10 + 8, 8);
+        result = ALU(4, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
+        printf("Result for mul is ********************* %s\n",result);
+        strcpy(regFile[binaryToDecimal(rd, 10)], result);
+     }
 
         strcpy(PC, ALU(0, PC, "1", 16, 0)); //move to next instruction
         printExecutionData(i);
@@ -417,15 +425,7 @@ void printExecutionData(int instrNum){
 
         sprintf(instrBuilder, "%s $%d, $%d, $%d", "SUB", binaryToDecimal(rd, 10), binaryToDecimal(rs, 8), binaryToDecimal(rt, 8));
     }
-    else if(strncmp(MUL, instrFromMem, OPCODE_SIZE) == 0) { //MEM[$s + offset] = $t = sw $t, offset($s)
-        char *result;
-        strncpy(rd, instrFromMem + OPCODE_SIZE, 10);
-        strncpy(rs, instrFromMem + OPCODE_SIZE + 10, 8);
-        strncpy(rt, instrFromMem + OPCODE_SIZE + 10 + 8, 8);
-        result = ALU(4, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
-        printf("Result for mul is ********************* %s\n",result);
-        strcpy(regFile[binaryToDecimal(rd, 10)], result);
-     }
+
 
     printf("%-30s %-40s %-30s\n", "Instruction", "Binary representation", "Program Counter");
     printf("%-30s %-40s %-30s\n", instrBuilder, instrFromMem, PC);
