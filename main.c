@@ -44,6 +44,7 @@ int main(int argc, char **argv)
 
     strcpy(regFile[6], "00000000000000000000000000000111");
     strcpy(regFile[3], "00000000000000000000000001100100");
+
     EXEC_INFO info = initCPU(PC); //need to init the PC
     sourceCode = checkAndGetArg(argc, argv);
     loadAndStoreInstrs(sourceCode, &info);
