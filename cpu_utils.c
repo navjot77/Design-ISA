@@ -476,6 +476,7 @@ void runProgram(EXEC_INFO info){
 
         // $t = MEM[$s + offset]
         if(strncmp(LW, instr, OPCODE_SIZE) == 0){ //LOAD WORD
+
             rsOffset = OPCODE_SIZE;
             rtOffset = OPCODE_SIZE + REG_ADDR_SIZE;
             immOffset = rtOffset + REG_ADDR_SIZE;
@@ -489,11 +490,8 @@ void runProgram(EXEC_INFO info){
             memLoc = binaryToDecimal(regFile[binaryToDecimal(rs, REG_ADDR_SIZE)], REG_ADDR_SIZE) + binaryToDecimal(imm, IMM_SIZE);
             strcpy(memAddr, decimalToBinary(memLoc, WORD_SIZE));
             strcpy(memData, memory[binaryToDecimal(memAddr, WORD_SIZE)]);
-
             strcpy(regFile[binaryToDecimal(rt, REG_ADDR_SIZE)], memData);
-            printf("LW storing data %d from Memory Address %d to Register $%d\n", binaryToDecimal(memData, WORD_SIZE), binaryToDecimal(memAddr, WORD_SIZE), binaryToDecimal(rt, REG_ADDR_SIZE));
-            printf("Data stored in Register $%d is %d\n",  binaryToDecimal(rt, REG_ADDR_SIZE), binaryToDecimal(regFile[binaryToDecimal(rt, REG_ADDR_SIZE)], WORD_SIZE));
-
+            
         }else if(strncmp(SW, instr, OPCODE_SIZE) == 0){ //MEM[$s + offset] = $t STORE WORD
 
             rsOffset = OPCODE_SIZE;
@@ -510,10 +508,9 @@ void runProgram(EXEC_INFO info){
             strcpy(memAddr, decimalToBinary(memLoc, WORD_SIZE));         //store memory addr to store data in
             strcpy(memData, regFile[binaryToDecimal(rt, REG_ADDR_SIZE)] );      //grab data to transfer and store in memData
             strcpy(memory[binaryToDecimal(memAddr, WORD_SIZE)], memData);//store in memory location
-            printf("SW storing data %d from Register $%d to Memory Address %d\n", binaryToDecimal(memData, WORD_SIZE), binaryToDecimal(rt, REG_ADDR_SIZE), binaryToDecimal(memAddr, WORD_SIZE));
-            printf("Data stored in Memory Address %d is %d\n",  binaryToDecimal(memAddr, WORD_SIZE), binaryToDecimal(memory[binaryToDecimal(memAddr, WORD_SIZE)], WORD_SIZE));
 
         }else if(strncmp(LD, instr, OPCODE_SIZE) == 0) { //LOAD using general address mode
+
             // $reg, distance(base, index, scale) 5 7 5 5 4
             rdOffset = OPCODE_SIZE;
             int distanceOffset = OPCODE_SIZE + REG_ADDR_SIZE;
@@ -554,6 +551,7 @@ void runProgram(EXEC_INFO info){
             strcpy(regFile[binaryToDecimal(rd, REG_ADDR_SIZE)], memData);
 
         }else if (strncmp(ST, instr, OPCODE_SIZE) == 0) { //STORE word using general address mode
+
             // $reg, distance(base, index, scale) 5 7 5 5 4
             int rdOffset = OPCODE_SIZE;
             int distanceOffset = OPCODE_SIZE + REG_ADDR_SIZE;
@@ -617,6 +615,7 @@ void runProgram(EXEC_INFO info){
 
             result = ALU(ADD_OP, regFile[binaryToDecimal(rs, RTYPE_ADDR_SIZE)], regFile[binaryToDecimal(rt, RTYPE_ADDR_SIZE)], WORD_SIZE, 1); //execute instruction
             strcpy(regFile[binaryToDecimal(rd, RTYPE_RD_SIZE)], result);
+
         }else if(strncmp(MUL, instr, OPCODE_SIZE) == 0) { //MUL INSTRUCTION
 
             //get register addresses and offset value from instruction memory
@@ -626,6 +625,7 @@ void runProgram(EXEC_INFO info){
 
             result = ALU(MUL_OP, regFile[binaryToDecimal(rs, RTYPE_ADDR_SIZE)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
             strcpy(regFile[binaryToDecimal(rd, RTYPE_RD_SIZE)], result);
+
         }else if(strncmp(MOD, instr, OPCODE_SIZE) == 0){ //MOD INSTRUCTION
 
             //get register addresses and offset value from instruction memory
@@ -635,6 +635,7 @@ void runProgram(EXEC_INFO info){
 
             result = ALU(MOD_OP, regFile[binaryToDecimal(rs, RTYPE_ADDR_SIZE)], regFile[binaryToDecimal(rt, RTYPE_ADDR_SIZE)], WORD_SIZE, 1);
             strcpy(regFile[binaryToDecimal(rd, RTYPE_RD_SIZE)], result);
+
         }else if(strncmp(DIV, instr, OPCODE_SIZE) == 0) { //DIV INSTRUCTION
 
             //get register addresses and offset value from instruction memory
