@@ -19,7 +19,7 @@ char flags[WORD_SIZE + 1];
 char *memory[MEM_ROWS]; //64kb mem
 char *regFile[NUM_REG];
 
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     char *sourceCode;
 
@@ -47,6 +47,7 @@ void main(int argc, char **argv)
     loadAndStoreInstrs(sourceCode, &info);
     runProgram(info);
     freeMemory();
+    return 0;
 }
 
 //will get the file name from arg

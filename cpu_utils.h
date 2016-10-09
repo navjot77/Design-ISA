@@ -57,8 +57,8 @@ char *signExtend(char *value, int size);
 char *convertInstrToBin(char *instr);
 
 //functions for decoding instructions
-char *genLWSWbinInstr(char **tokens, int params);
-char *genLDSTbinInstr(char **tokens, int params);
+char *genLWSWbinInstr(char **tokens);
+char *genLDSTbinInstr(char **tokens);
 
 //char *convertToBin(int toConvert, bool isImmVal);
 char *decimalToBinary(int toConvert, int numOfBits);
