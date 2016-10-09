@@ -43,9 +43,12 @@ void loadAndStoreInstrs(char *fileName, EXEC_INFO *info){
         exit;
     }
 
+    char *freeHandle;
+
     while(fgets(buff, 250, fp)) {
-        strcpy(memory[memLoc], convertInstrToBin(buff));
+        strcpy(memory[memLoc], freeHandle = convertInstrToBin(buff));
         memLoc++;
+        free(freeHandle);
     }
 
     info->lines = memLoc - TEXT_SEGMENT;
@@ -58,9 +61,11 @@ void loadAndStoreInstrs(char *fileName, EXEC_INFO *info){
  */
 char *convertInstrToBin(char *instr) {
     char *tokens[MAX_TOKENS];
-    char *token = NULL;
+    char *token = NULL, *freeHandle = NULL;
     char *binInstr = (char *) malloc(sizeof(char) * WORD_SIZE);
     char *temp = malloc(strlen(instr) + 1);
+
+    int params = 0;
 
     mallocErrorCheck(binInstr);
 
@@ -91,39 +96,43 @@ char *convertInstrToBin(char *instr) {
         tokens[walk] = (char *) malloc(sizeof(char) * strlen(token) + 1);
         mallocErrorCheck(tokens[walk]);
         strcpy(tokens[walk], token);
+        params++;
     }
 
     if (strcmp(tokens[0], "lw") == 0) {
         strcpy(binInstr, LW);
-        strcpy(binInstr + OPCODE_SIZE, genLWSWbinInstr(tokens));
+        strcpy(binInstr + OPCODE_SIZE, freeHandle = genLWSWbinInstr(tokens));
     } else if (strcmp(tokens[0], "sw") == 0) {
         strcpy(binInstr, SW);
-        strcpy(binInstr + OPCODE_SIZE, genLWSWbinInstr(tokens));
+        strcpy(binInstr + OPCODE_SIZE, freeHandle =genLWSWbinInstr(tokens));
     } else if (strcmp(tokens[0], "ld") == 0) {
         strcpy(binInstr, LD);
-        strcpy(binInstr + OPCODE_SIZE, genLDSTbinInstr(tokens));
+        strcpy(binInstr + OPCODE_SIZE, freeHandle = genLDSTbinInstr(tokens));
     }else if (strcmp(tokens[0], "st") == 0){
         strcpy(binInstr, ST);
-        strcpy(binInstr + OPCODE_SIZE, genLDSTbinInstr(tokens));
+        strcpy(binInstr + OPCODE_SIZE, freeHandle = genLDSTbinInstr(tokens));
     }else if(strcmp(tokens[0], "sub") == 0){
         strcpy(binInstr, SUB);
-        strcpy(binInstr + OPCODE_SIZE, genRTypeInstr(tokens));
+        strcpy(binInstr + OPCODE_SIZE, freeHandle = genRTypeInstr(tokens));
     }else if(strcmp(tokens[0], "add") == 0) {
         strcpy(binInstr, ADD);
-        strcpy(binInstr + OPCODE_SIZE, genRTypeInstr(tokens));
+        strcpy(binInstr + OPCODE_SIZE, freeHandle = genRTypeInstr(tokens));
     } else if(strcmp(tokens[0], "mul") == 0){
         strcpy(binInstr, MUL);
-        strcpy(binInstr + OPCODE_SIZE, genRTypeInstr(tokens));
+        strcpy(binInstr + OPCODE_SIZE, freeHandle = genRTypeInstr(tokens));
     } else if(strcmp(tokens[0], "div") == 0){
         strcpy(binInstr, DIV);
-        strcpy(binInstr + OPCODE_SIZE, genRTypeInstr(tokens));
+        strcpy(binInstr + OPCODE_SIZE, freeHandle = genRTypeInstr(tokens));
     } else if(strcmp(tokens[0], "mod") == 0){
         strcpy(binInstr, MOD);
-        strcpy(binInstr + OPCODE_SIZE, genRTypeInstr(tokens));
+        strcpy(binInstr + OPCODE_SIZE, freeHandle = genRTypeInstr(tokens));
     }
 
     binInstr[WORD_SIZE] = '\0';
 
+    for(int i = 0; i < params + 1; i++)
+        free(tokens[i]);
+    free(freeHandle);
     return binInstr;
 }
 
@@ -353,16 +362,20 @@ char* mulBinary(char* left, char* right, int size, int setFlags)
     if((op1 == INT_MIN && (op2 != 0 && op2 != 1)) || (op2 == INT_MIN && (op1 != 0 && op1 != 1)) && setFlags) { //very small # is a very large unsigned #
         flags[OVERFLOW_FLAG] = '1';
         printf("OVERFLOW ON INSTRUCTION\n");
-    }else flags[OVERFLOW_FLAG] = '0';
+    }else {
+        flags[OVERFLOW_FLAG] = '0';
 
-    while(op2 != 0) {
-        if(op2 & 01) { //if odd
-            result = binaryToDecimal(addBinary(decimalToBinary(result, WORD_SIZE), decimalToBinary(op1, WORD_SIZE), WORD_SIZE, setFlags), WORD_SIZE);
+        while (op2 != 0) {
+            if (op2 & 01) { //if odd
+                result = binaryToDecimal(
+                        addBinary(decimalToBinary(result, WORD_SIZE), decimalToBinary(op1, WORD_SIZE), WORD_SIZE,
+                                  setFlags), WORD_SIZE);
+            }
+            op1 = op1 << 1;
+            op2 = op2 >> 1;
         }
-        op1 = op1 << 1;
-        op2 = op2 >> 1;
-    }
 
+    }
     strcpy(mul, decimalToBinary(result, WORD_SIZE));
     return mul;
 }
@@ -384,37 +397,43 @@ char *divBinary(char *left, char *right, char **remainder, int size, int setFlag
     int dividend = binaryToDecimal(left, WORD_SIZE);
     int divisor = binaryToDecimal(right, WORD_SIZE);
 
-    int denom = divisor;
+    if(divisor == 0){
+        printf("Error. Divide by 0.\n");
+        exit(1);
+    }else {
 
-    while(denom <= dividend){
-        denom <<= 1;
-        curr <<= 1;
-    }
+        int denom = divisor;
 
-    denom >>= 1;
-    curr >>= 1;
-
-    while(curr != 0){
-        if(dividend >= denom){
-            dividend -= denom;
-            res |= curr;
+        while (denom <= dividend) {
+            denom <<= 1;
+            curr <<= 1;
         }
-        curr >>= 1;
+
         denom >>= 1;
-    }
+        curr >>= 1;
 
-    strcpy(result, decimalToBinary(res, WORD_SIZE));
+        while (curr != 0) {
+            if (dividend >= denom) {
+                dividend -= denom;
+                res |= curr;
+            }
+            curr >>= 1;
+            denom >>= 1;
+        }
 
-    //set flags
-    if(remainder != NULL) { //this is not the modulus function so no need to save remainder
-        strcpy(*remainder, decimalToBinary(dividend, WORD_SIZE));
-        if(dividend == 0)
-            flags[ZERO_FLAG] = '1';
-        else flags[ZERO_FLAG] = '0';
-    }else{
-        if(res == 0)
-            flags[ZERO_FLAG] = '1';
-        else flags[ZERO_FLAG] = '0';
+        strcpy(result, decimalToBinary(res, WORD_SIZE));
+
+        //set flags
+        if (remainder != NULL) { //this is not the modulus function so no need to save remainder
+            strcpy(*remainder, decimalToBinary(dividend, WORD_SIZE));
+            if (dividend == 0)
+                flags[ZERO_FLAG] = '1';
+            else flags[ZERO_FLAG] = '0';
+        } else {
+            if (res == 0)
+                flags[ZERO_FLAG] = '1';
+            else flags[ZERO_FLAG] = '0';
+        }
     }
 
     return result;
@@ -470,7 +489,11 @@ void runProgram(EXEC_INFO info){
     char *result;
 
     for(int i = 0; i < info.lines; i++){
-	    //fetch instr from mem
+        //clear out memAddr and memData for instructions not using memory
+        strcpy(memAddr, "00000000000000000000000000000000");
+        strcpy(memData, "00000000000000000000000000000000");
+
+        //fetch instr from mem
         memLoc = binaryToDecimal(PC, PC_SIZE);
         strcpy(instr, memory[memLoc]);
 
@@ -491,7 +514,7 @@ void runProgram(EXEC_INFO info){
             strcpy(memAddr, decimalToBinary(memLoc, WORD_SIZE));
             strcpy(memData, memory[binaryToDecimal(memAddr, WORD_SIZE)]);
             strcpy(regFile[binaryToDecimal(rt, REG_ADDR_SIZE)], memData);
-            
+
         }else if(strncmp(SW, instr, OPCODE_SIZE) == 0){ //MEM[$s + offset] = $t STORE WORD
 
             rsOffset = OPCODE_SIZE;
@@ -649,6 +672,8 @@ void runProgram(EXEC_INFO info){
 
         strcpy(PC, ALU(ADD_OP, PC, "1", PC_SIZE, 0)); //move to next instruction
         printExecutionData(i);
+        if(result != NULL)
+            free(result);
     }
 }
 
