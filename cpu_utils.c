@@ -591,7 +591,7 @@ char* mulBinary(char* left, char* right, int size, int setFlags)
 
     long result = 0;
 
-    if((op1 == INT_MIN && (op2 != 0 || op2 != '1')) || (op2 == INT_MIN && (op1 != 0 || op1 != '1')) && setFlags) { //very small # is a very large unsigned #
+    if((op1 == INT_MIN && (op2 != 0 && op2 != 1)) || (op2 == INT_MIN && (op1 != 0 && op1 != 1)) && setFlags) { //very small # is a very large unsigned #
         flags[OVERFLOW_FLAG] = '1';
         printf("OVERFLOW ON INSTRUCTION\n");
     }else flags[OVERFLOW_FLAG] = '0';
