@@ -516,10 +516,10 @@ void runProgram(EXEC_INFO info){
             int indexOffset = baseOffset + REG_ADDR_SIZE;
             int scaleOffset = indexOffset + REG_ADDR_SIZE;
 
-            char dist[8];
+            char dist[DIST_SIZE + 1];
             char base[REG_ADDR_SIZE + 1];
             char index[REG_ADDR_SIZE + 1];
-            char scale[5];
+            char scale[SCALE_SIZE + 1];
 
             dist[DIST_SIZE] = '\0';
             base[REG_ADDR_SIZE] = '\0';
