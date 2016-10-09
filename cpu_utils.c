@@ -74,14 +74,17 @@ char *convertInstrToBin(char *instr) {
         strcpy(binInstr + OPCODE_SIZE, genLDSTbinInstr(tokens));
     }else if(strcmp(tokens[0], "sub") == 0){
         strcpy(binInstr, SUB);
-        strcpy(binInstr + OPCODE_SIZE, genSUBInstr(tokens));
+        strcpy(binInstr + OPCODE_SIZE, genRTypeInstr(tokens));
+    }else if(strcmp(tokens[0], "add") == 0) {
+        strcpy(binInstr, ADD);
+        strcpy(binInstr + OPCODE_SIZE, genRTypeInstr(tokens));
     }
 
     binInstr[WORD_SIZE] = '\0';
     return binInstr;
 }
 
-char *genSUBInstr(char **tokens){
+char *genRTypeInstr(char **tokens){
     char *binInstr  = (char *)malloc((WORD_SIZE - OPCODE_SIZE) * sizeof(char) + 1);
     char *rd, *rs, *rt;
 
@@ -340,6 +343,14 @@ void runProgram(EXEC_INFO info){
             strncpy(rt, instr + OPCODE_SIZE + 10 + 8, 8);
 
             result = ALU(1, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
+            strcpy(regFile[binaryToDecimal(rd, 10)], result);
+        }else if((strncmp(ADD, instr, OPCODE_SIZE) == 0)) {
+            char *result;
+            strncpy(rd, instr + OPCODE_SIZE, 10);
+            strncpy(rs, instr + OPCODE_SIZE + 10, 8);
+            strncpy(rt, instr + OPCODE_SIZE + 10 + 8, 8);
+
+            result = ALU(0, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
             strcpy(regFile[binaryToDecimal(rd, 10)], result);
         }
 
