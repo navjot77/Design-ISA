@@ -14,6 +14,7 @@
 #define RS_SIZE 5
 #define RT_SIZE 5
 #define IMM_SIZE 16
+#define MAX_SIZE 10
 
 //memory start addresses
 #define TEXT_SEGMENT 512    //where text segment begins
@@ -33,6 +34,7 @@
 #define BOOT_ADDR "0000000000000000"
 
 //flag defines
+#define SIGN_FLAG 2
 #define OVERFLOW_FLAG 1
 #define ZERO_FLAG 0
 
@@ -46,13 +48,18 @@ extern char memData[WORD_SIZE + 1];
 extern char instrReg[WORD_SIZE + 1];
 extern char flags[WORD_SIZE + 1];
 
+//execution functions
 EXEC_INFO initCPU();
 void loadAndStoreInstrs(char *fileName, EXEC_INFO *info);
 void runProgram(EXEC_INFO info);
 
+//CPU functions
 char *ALU(int op, char *opLeft, char *opRight, int size, int setFlags);
 char *addBinary (char *opLeft, char *opRight, int size, int setFlags);
 char *subBinary (char *opLeft, char *opRight, int size, int setFlags);
+char* mulBinary(char* left, char* right, int size, int setFlags);
+char* leftShift(char* input, int size);
+char* rightShift(char* input, int size);
 char *signExtend(char *value, int size);
 char *convertInstrToBin(char *instr);
 
@@ -61,14 +68,11 @@ char *genLWSWbinInstr(char **tokens);
 char *genLDSTbinInstr(char **tokens);
 char *genRTypeInstr(char **tokens);
 
-//char *convertToBin(int toConvert, bool isImmVal);
+//conversion functions
 char *decimalToBinary(int toConvert, int numOfBits);
 char *decimalToComplementBinary(int toConvert, int numOfBits);
 int binaryToDecimal(char *binary, int size);
 
 void printExecutionData(int instrNum);
 
-char* mulBinary(char* left, char* right, int size, int setFlags);
-char* leftShift(char* input, int size);
-char* rightShift(char* input, int size);
 #endif //DESIGN_ISA_CPU_UTILS_H
