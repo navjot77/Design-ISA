@@ -224,7 +224,7 @@ char *addBinary (char *opLeft, char *opRight, int size, int setFlags){
 
     //don't want to set flags for PC increment
     if(setFlags) {
-        if (carry)
+        if (carry == '1')
             flags[OVERFLOW_FLAG] = '1';
         else flags[OVERFLOW_FLAG] = '0';
 
@@ -363,10 +363,11 @@ void runProgram(EXEC_INFO info){
 void printExecutionData(int instrNum){
     char instrBuilder[250];
     char *instrFromMem = memory[TEXT_SEGMENT + instrNum];
-    char rs[RS_SIZE + 1], rt[RT_SIZE + 1], imm[IMM_SIZE + 1];
+    char rs[11], rt[11], rd[11], imm[IMM_SIZE + 1];
 
-    rs[RS_SIZE] = '\0';
-    rt[RT_SIZE] = '\0';
+    rs[10] = '\0';
+    rt[10] = '\0';
+    rd[10] = '\0';
     imm[IMM_SIZE] = '\0';
 
     //opcode:6 | rs 5 $2 | rt 5 $1 | im16 = 622 (lw $t, 622($rs))
@@ -397,6 +398,19 @@ void printExecutionData(int instrNum){
         strncpy(scale, instrFromMem + OPCODE_SIZE + RS_SIZE + 7 + RS_SIZE + RS_SIZE, 3);
         sprintf(instrBuilder, "%s $%d, %d($%d, $%d, %d)", "LD", binaryToDecimal(dest, RS_SIZE), binaryToDecimal(distance, 7), binaryToDecimal(baseReg, RS_SIZE),
         binaryToDecimal(indexReg, RS_SIZE), binaryToDecimal(scale, 4));
+    }else if(strncmp(ADD, instrFromMem, OPCODE_SIZE) == 0) {
+        strncpy(rd, instrFromMem + OPCODE_SIZE, 10);
+        strncpy(rs, instrFromMem + OPCODE_SIZE + 10, 8);
+        strncpy(rt, instrFromMem + OPCODE_SIZE + 10 + 8, 8);
+
+        sprintf(instrBuilder, "%s $%d, $%d, $%d", "ADD", binaryToDecimal(rd, 10), binaryToDecimal(rs, 8), binaryToDecimal(rt, 8));
+
+    }else if(strncmp(SUB, instrFromMem, OPCODE_SIZE) == 0) {
+        strncpy(rd, instrFromMem + OPCODE_SIZE, 10);
+        strncpy(rs, instrFromMem + OPCODE_SIZE + 10, 8);
+        strncpy(rt, instrFromMem + OPCODE_SIZE + 10 + 8, 8);
+
+        sprintf(instrBuilder, "%s $%d, $%d, $%d", "SUB", binaryToDecimal(rd, 10), binaryToDecimal(rs, 8), binaryToDecimal(rt, 8));
     }
     printf("%-30s %-40s %-30s\n", "Instruction", "Binary representation", "Program Counter");
     printf("%-30s %-40s %-30s\n", instrBuilder, instrFromMem, PC);
