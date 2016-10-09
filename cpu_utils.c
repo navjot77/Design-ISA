@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <stdio.h>
-#include <math.h>
 #include <string.h>
 #include "cpu_utils.h"
 #include "opcodes.h"
@@ -32,9 +31,7 @@ void loadAndStoreInstrs(char *fileName, EXEC_INFO *info){
 char *convertInstrToBin(char *instr) {
     char *tokens[5];
     char *token;
-    bool hasOffset = false;
     char *binInstr = (char *)malloc(sizeof(char) * WORD_SIZE);
-    unsigned short instructionType = 0; //R type = 0, I type = 1, J type = 2
 
     char *temp = malloc(strlen(instr) + 1);
     strcpy(temp, instr);
