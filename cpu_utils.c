@@ -171,7 +171,7 @@ int binaryToDecimal(char *binary, int size) {
     return num;
 }
 
-//ADD = 0, SUB = 1, MUL = 2, DIV = 3, MOD = 4
+//ADD = 0, SUB = 1, MUL = 4, DIV = 2, MOD = 3
 //setFlags if 0 -> do not change the flags
 char *ALU(int op, char *opLeft, char *opRight, int size, int setFlags) {
     char *left, *right, *result = NULL;
@@ -189,6 +189,7 @@ char *ALU(int op, char *opLeft, char *opRight, int size, int setFlags) {
         case 2:
             break;
         case 3:
+            result = modBinary(left, right, size, setFlags);
             break;
         case 4:
 	        result = mulBinary(left, right, size, setFlags);
@@ -455,7 +456,16 @@ void runProgram(EXEC_INFO info){
 
             result = ALU(4, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
             strcpy(regFile[binaryToDecimal(rd, 10)], result);
-     }
+        }else if(strncmp(MOD, instr, OPCODE_SIZE) == 0){
+            char *result;
+            strncpy(rd, instr + OPCODE_SIZE, 10);
+            strncpy(rs, instr + OPCODE_SIZE + 10, 8);
+            strncpy(rt, instr + OPCODE_SIZE + 10 + 8, 8);
+
+            result = ALU(3, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
+            strcpy(regFile[binaryToDecimal(rd, 10)], result);
+
+        }
 
         strcpy(PC, ALU(0, PC, "1", 16, 0)); //move to next instruction
         printExecutionData(i);
@@ -542,6 +552,14 @@ void printExecutionData(int instrNum){
 
         sprintf(instrBuilder, "%s $%d, $%d, $%d", "MUL", binaryToDecimal(rd, 10), binaryToDecimal(rs, 8), binaryToDecimal(rt, 8));
 
+    }else if(strncmp(MOD, instrFromMem, OPCODE_SIZE) == 0) {
+        char *result;
+        strncpy(rd, instrFromMem + OPCODE_SIZE, 10);
+        strncpy(rs, instrFromMem + OPCODE_SIZE + 10, 8);
+        strncpy(rt, instrFromMem + OPCODE_SIZE + 10 + 8, 8);
+
+        sprintf(instrBuilder, "%s $%d, $%d, $%d", "MUL", binaryToDecimal(rd, 10), binaryToDecimal(rs, 8), binaryToDecimal(rt, 8));
+
     }
 
     printf("%-30s %-40s %-30s\n", "Instruction", "Binary representation", "Program Counter");
@@ -594,4 +612,13 @@ char* rightShift(char* input, int size)
     result= decimalToBinary(num, size);
     return result;
     
+}
+
+char* mod(char* left, char* right, int size, int setFlags)
+{
+    char result[size], qt[32];  //quotient and result
+    qt= divBinary(left, right, size, setFlags); //to get quotient when  -> left/right
+    result= mulBinary(qt, right, size, setFlags);   //multiply quotient with right  -> (left/right)*right
+    result= subBinary(left, result, size, setFlags);    //subtract the result we got from left  -> left-((left/right)*right)
+    return result;
 }
