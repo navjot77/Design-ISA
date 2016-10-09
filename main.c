@@ -91,7 +91,6 @@ void init() {
         }
         regFile[row][WORD_SIZE] = '\0';
     }
-
 }
 
 void freeMemory() {

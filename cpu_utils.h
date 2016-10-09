@@ -59,6 +59,7 @@ char *convertInstrToBin(char *instr);
 //functions for decoding instructions
 char *genLWSWbinInstr(char **tokens);
 char *genLDSTbinInstr(char **tokens);
+char *genSUBInstr(char **tokens);
 
 //char *convertToBin(int toConvert, bool isImmVal);
 char *decimalToBinary(int toConvert, int numOfBits);

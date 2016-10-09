@@ -72,15 +72,32 @@ char *convertInstrToBin(char *instr) {
     }else if(strcmp(tokens[0], "ld") == 0){
         strcpy(binInstr, LD);
         strcpy(binInstr + OPCODE_SIZE, genLDSTbinInstr(tokens));
+    }else if(strcmp(tokens[0], "sub") == 0){
+        strcpy(binInstr, SUB);
+        strcpy(binInstr + OPCODE_SIZE, genSUBInstr(tokens));
     }
 
     binInstr[WORD_SIZE] = '\0';
+    return binInstr;
+}
 
+char *genSUBInstr(char **tokens){
+    char *binInstr  = (char *)malloc((WORD_SIZE - OPCODE_SIZE) * sizeof(char) + 1);
+    char *rd, *rs, *rt;
+
+    rd = decimalToBinary(atoi(tokens[1] + 1), 10);
+    rs = decimalToBinary(atoi(tokens[2] + 1), 8);
+    rt = decimalToBinary(atoi(tokens[3] + 1), 8);
+
+    strcpy(binInstr, rd);
+    strcat(binInstr, rs);
+    strcat(binInstr, rt);
+    binInstr[WORD_SIZE - OPCODE_SIZE] = '\0';
     return binInstr;
 }
 
 char *genLDSTbinInstr(char **tokens){
-    char *binInstr = (char *)malloc(WORD_SIZE * sizeof(char));
+    char *binInstr = (char *)malloc((WORD_SIZE - OPCODE_SIZE + 1) * sizeof(char));
     char *indexReg = NULL, *baseReg = NULL, *distance = NULL, *scale = NULL, *dest = NULL;
     // $reg, distance(base, index, scale)
 
@@ -175,19 +192,14 @@ char *ALU(int op, char *opLeft, char *opRight, int size, int setFlags) {
 }
 
 char *subBinary(char *opLeft, char *opRight, int size, int setFlags){
-
-    // Hard coding for testing purpose.
-    char *opRght="0111111111111111";
-    char *opLft="0001111110111110";
-
-    
+    char *right, *left;
     // Getting Complement of A Number(The opcode which is on right side)
-    opRght=decimalToComplementBinary(binaryToDecimal(opRght,16),16);
-    
+    right = decimalToComplementBinary(binaryToDecimal(opRight, size), size);
+
     // Adding 1 to the complement of operand
-    opRght=addBinary("0000000000000001",opRght,16,setFlags);        
+    right = addBinary(decimalToBinary(1, size), right, size, setFlags);
     
-    return addBinary(opLft,opRght,16,setFlags);
+    return addBinary(opLeft, right, size, setFlags);
 }
 
 char *addBinary (char *opLeft, char *opRight, int size, int setFlags){
@@ -232,8 +244,9 @@ char *decimalToComplementBinary(int toConvert, int numOfBits){
            toConvert & 1 ? (binary[i] = '0') : (binary[i] = '1');
            toConvert >>= 1;
     }
+
     return binary;
-    }
+}
 
 
 char *signExtend(char *value, int size){
@@ -273,9 +286,9 @@ EXEC_INFO initCPU() {
 
 void runProgram(EXEC_INFO info){
     char instr[WORD_SIZE + 1];
-    char rd[RS_SIZE + 1];
-    char rs[RS_SIZE + 1];
-    char rt[RT_SIZE + 1];
+    char rd[11];
+    char rs[11];
+    char rt[11];
     char imm[IMM_SIZE + 1];
 
     imm[IMM_SIZE] = '\0';
@@ -319,11 +332,15 @@ void runProgram(EXEC_INFO info){
 
         }else if(strncmp(LD, instr, OPCODE_SIZE) == 0) {
             printf("here");
-        }else if(strncmp(ADD, instr, OPCODE_SIZE) == 0) { //MEM[$s + offset] = $t = sw $t, offset($s)
+        }else if(strncmp(SUB, instr, OPCODE_SIZE) == 0) { //MEM[$s + offset] = $t = sw $t, offset($s)
+            char *result;
 
             strncpy(rd, instr + OPCODE_SIZE, 10);
             strncpy(rs, instr + OPCODE_SIZE + 10, 8);
             strncpy(rt, instr + OPCODE_SIZE + 10 + 8, 8);
+
+            result = ALU(1, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
+            strcpy(regFile[binaryToDecimal(rd, 10)], result);
         }
 
         strcpy(PC, ALU(0, PC, "1", 16, 0)); //move to next instruction
