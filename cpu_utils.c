@@ -154,7 +154,7 @@ int binaryToDecimal(char *binary, int size) {
     return num;
 }
 
-//ADD = 0, MUL = 1, DIV = 2
+//ADD = 0, SUB = 1, MUL = 2, DIV = 3, MOD = 4
 //setFlags if 0 -> do not change the flags
 char *ALU(int op, char *opLeft, char *opRight, int size, int setFlags) {
     char *left, *right, *result = NULL;
@@ -170,6 +170,10 @@ char *ALU(int op, char *opLeft, char *opRight, int size, int setFlags) {
             result = subBinary(left, right, size, setFlags);
             break;
         case 2:
+            break;
+        case 3:
+            break;
+        case 4:
             break;
     }
     return result;
