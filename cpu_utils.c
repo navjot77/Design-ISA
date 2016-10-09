@@ -9,14 +9,12 @@
 #include "cpu_utils.h"
 #include "opcodes.h"
 
-#define MAX_TOKENS 10U
+#define MAX_TOKENS 10
 
 void loadAndStoreInstrs(char *fileName, EXEC_INFO *info){
     FILE *fp = NULL;
     char buff[250];
     int memLoc = TEXT_SEGMENT;
-
-    char *decodedInstr = NULL;
 
     fp = fopen(fileName, "r");
     if(fp == NULL) {
@@ -127,9 +125,6 @@ char *genLWSWbinInstr(char **tokens) {
     strcat(binInstr, immVal);
     binInstr[WORD_SIZE] = '\0';
 
-    free(rs);
-    free(rt);
-    free(immVal);
     return binInstr;
 }
 
