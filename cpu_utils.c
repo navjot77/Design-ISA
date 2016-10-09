@@ -283,8 +283,6 @@ void runProgram(EXEC_INFO info){
     char rt[RT_SIZE + 1];
     char imm[IMM_SIZE + 1];
 
-    char *freeHandle = NULL; //we need a way to free the memory returned by function that used malloc
-
     imm[IMM_SIZE] = '\0';
     rd[RS_SIZE] = '\0';
     rs[RS_SIZE] = '\0';
@@ -305,11 +303,8 @@ void runProgram(EXEC_INFO info){
             strncpy(imm, instr + OPCODE_SIZE + RS_SIZE + RT_SIZE, IMM_SIZE);
 
             memLoc = binaryToDecimal(regFile[binaryToDecimal(rs, RS_SIZE)], RS_SIZE) + binaryToDecimal(imm, IMM_SIZE);
-            strcpy(memAddr, freeHandle = decimalToBinary(memLoc, WORD_SIZE));
-            free(freeHandle);
-
-            strcpy(memData, freeHandle = memory[binaryToDecimal(memAddr, WORD_SIZE)]);
-            free(freeHandle);
+            strcpy(memAddr, decimalToBinary(memLoc, WORD_SIZE));
+            strcpy(memData, memory[binaryToDecimal(memAddr, WORD_SIZE)]);
 
             strcpy(regFile[binaryToDecimal(rt, RT_SIZE)], memData);
             printf("LW storing data %d from Memory Address %d to Register $%d\n", binaryToDecimal(memData, WORD_SIZE), binaryToDecimal(memAddr, WORD_SIZE), binaryToDecimal(rt, RT_SIZE));
@@ -321,8 +316,7 @@ void runProgram(EXEC_INFO info){
             strncpy(imm, instr + OPCODE_SIZE + RS_SIZE + RT_SIZE, IMM_SIZE);
 
             memLoc = binaryToDecimal(regFile[binaryToDecimal(rs, RS_SIZE)], RS_SIZE) + binaryToDecimal(imm, IMM_SIZE);
-            strcpy(memAddr, freeHandle = decimalToBinary(memLoc, WORD_SIZE));         //store memory addr to store data in
-            free(freeHandle);
+            strcpy(memAddr, decimalToBinary(memLoc, WORD_SIZE));         //store memory addr to store data in
             strcpy(memData, regFile[binaryToDecimal(rt, RT_SIZE)] );      //grab data to transfer and store in memData
             strcpy(memory[binaryToDecimal(memAddr, WORD_SIZE)], memData);//store in memory location
             printf("SW storing data %d from Register $%d to Memory Address %d\n", binaryToDecimal(memData, WORD_SIZE), binaryToDecimal(rt, RT_SIZE), binaryToDecimal(memAddr, WORD_SIZE));
@@ -330,16 +324,13 @@ void runProgram(EXEC_INFO info){
 
         }else if(strncmp(LD, instr, OPCODE_SIZE) == 0) {
             printf("here");
-        }
-        else if(strncmp(ADD, instr, OPCODE_SIZE) == 0){ //MEM[$s + offset] = $t = sw $t, offset($s)
+        }else if(strncmp(ADD, instr, OPCODE_SIZE) == 0) { //MEM[$s + offset] = $t = sw $t, offset($s)
 
             strncpy(rd, instr + OPCODE_SIZE, 10);
-            strncpy(rs, instr + OPCODE_SIZE+10, 8);
-            strncpy(rt, instr + OPCODE_SIZE +10+8, 8);
-       
-       //NEED TO CHECK BELOW INSTRUCTION     
-	   // strcpy(rd, ALU(1, rs, rt, 16, 0));
-	}
+            strncpy(rs, instr + OPCODE_SIZE + 10, 8);
+            strncpy(rt, instr + OPCODE_SIZE + 10 + 8, 8);
+        }
+
         strcpy(PC, ALU(0, PC, "1", 16, 0)); //move to next instruction
         printExecutionData(i);
     }
