@@ -33,13 +33,11 @@ char *convertInstrToBin(char *instr) {
     char *tokens[5];
     char *token;
     bool hasOffset = false;
-    char *binInstr = (char *)malloc(sizeof(char) * 32 + 1);
+    char *binInstr = (char *)malloc(sizeof(char) * WORD_SIZE);
     unsigned short instructionType = 0; //R type = 0, I type = 1, J type = 2
 
     char *temp = malloc(strlen(instr) + 1);
     strcpy(temp, instr);
-
-    char *rs = NULL, *rt = NULL, *rd = NULL, *immVal = NULL;
 
     //init tokens array so we know how many args for instr
     for(int i = 0; i < 5; i++)
@@ -66,41 +64,37 @@ char *convertInstrToBin(char *instr) {
     //decode opcode first
     if(strcmp(tokens[0], "lw") == 0){
         strcpy(binInstr, LW);
-        instructionType = 1;
-        hasOffset = true;
+        strcpy(binInstr + OPCODE_SIZE, genLWSWbinInstr(tokens, params));
     }else if(strcmp(tokens[0], "sw") == 0){
         strcpy(binInstr, SW);
-        instructionType = 1;
-        hasOffset = true;
+        strcpy(binInstr + OPCODE_SIZE, genLWSWbinInstr(tokens, params));
     }
 
-    //convert the rest
-    if(instructionType == 1){
+    binInstr[WORD_SIZE] = '\0';
+    printf("%s\n", binInstr);
+    return binInstr;
+}
 
-        if(hasOffset) { //has an offset so must convert differently
+char *genLWSWbinInstr(char **tokens, int params) {
+    char *rt = NULL, *immVal = NULL, *rs = NULL;
+    char *binInstr = (char *)malloc(sizeof(char) * WORD_SIZE);
 
-            rt= convertToBin(atoi(strchr(tokens[1], '$') + 1), false);
+    rt= convertToBin(atoi(strchr(tokens[1], '$') + 1), false);
 
-            char *leftParens = strchr(tokens[params], '(');
-            *leftParens = '\0';
-            immVal = convertToBin(atoi(tokens[params]), true);
+    char *leftParens = strchr(tokens[params], '(');
+    *leftParens = '\0';
+    immVal = convertToBin(atoi(tokens[params]), true);
 
-            char *rightParens = strchr(leftParens + 1, ')');
-            *rightParens = '\0';
-            leftParens += 2;
-            rs = convertToBin(atoi(leftParens), false);
+    char *rightParens = strchr(leftParens + 1, ')');
+    *rightParens = '\0';
+    leftParens += 2;
+    rs = convertToBin(atoi(leftParens), false);
 
-            //build the converted string here
-            strcat(binInstr, rs);
-            strcat(binInstr, rt);
-            strcat(binInstr, immVal);
-            binInstr[32] = '\0';
-        }
-
-    }else{
-        //conversion for the rest here
-    }
-
+    //build the converted string here
+    strcpy(binInstr, rs);
+    strcat(binInstr, rt);
+    strcat(binInstr, immVal);
+    binInstr[WORD_SIZE] = '\0';
     return binInstr;
 }
 

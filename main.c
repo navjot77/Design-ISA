@@ -8,6 +8,7 @@
 
 char *checkAndGetArg(int argc, char **arg);
 void init();
+void freeMemory();
 
 char PC[PC_SIZE + 1];
 char memAddr[WORD_SIZE + 1];
@@ -45,7 +46,7 @@ void main(int argc, char **argv)
     sourceCode = checkAndGetArg(argc, argv);
     loadAndStoreInstrs(sourceCode, &info);
     runProgram(info);
-
+    freeMemory();
 }
 
 //will get the file name from arg
@@ -91,4 +92,15 @@ void init() {
         regFile[row][WORD_SIZE] = '\0';
     }
 
+}
+
+void freeMemory() {
+    //free memory
+    for(int i = 0; i < NUM_REG; i++){
+        free(regFile[i]);
+    }
+
+    for(int i = 0; i < MEM_ROWS; i++) {
+        free(memory[i]);
+    }
 }
