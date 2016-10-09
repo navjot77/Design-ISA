@@ -12,6 +12,26 @@
 
 #define MAX_TOKENS 10
 
+/**
+ * Inits the CPU with bootup values
+ * @return returns a struct containing information about start up addresses etc
+ */
+EXEC_INFO initCPU() {
+    EXEC_INFO info;
+
+    strcpy(PC, BOOT_ADDR);
+    info.heap_ptr = HEAP_SEGMENT;
+    info.stack_ptr = STACK_SEGMENT;
+    info.lines = 0;
+
+    return info;
+}
+
+/**
+ * loads instructions from file, encodes each instruction and stores in text section of memory
+ * @param fileName : file that contains our instructions
+ * @param info : struct containing information for execution
+ */
 void loadAndStoreInstrs(char *fileName, EXEC_INFO *info){
     FILE *fp = NULL;
     char buff[250];
@@ -31,6 +51,11 @@ void loadAndStoreInstrs(char *fileName, EXEC_INFO *info){
     info->lines = memLoc - TEXT_SEGMENT;
 }
 
+/**
+ * Decodes all instructions in the text file
+ * @param instr : instruction from file to encode
+ * @return :
+ */
 char *convertInstrToBin(char *instr) {
     char *tokens[MAX_TOKENS];
     char *token = NULL;
@@ -101,6 +126,11 @@ char *convertInstrToBin(char *instr) {
     return binInstr;
 }
 
+/**
+ * Utility function to encode instruction for basic R type functions
+ * @param tokens : 2d array containing all parsed tokens from instruction
+ * @return returns the encoded instruction excluding the opcode
+ */
 char *genRTypeInstr(char **tokens){
     char *binInstr  = (char *)malloc((WORD_SIZE - OPCODE_SIZE) * sizeof(char) + 1);
     char *rd = NULL, *rs = NULL, *rt = NULL;
@@ -118,6 +148,12 @@ char *genRTypeInstr(char **tokens){
     return binInstr;
 }
 
+/**
+ * Utility function to generate the encoded instruction for LD and ST (load and store)
+ * These are our general address mode instructions
+ * @param tokens : 2d array containing all tokens from parsed instruction
+ * @return returns the encoded instruction (excluding the opcode)
+ */
 char *genLDSTbinInstr(char **tokens){
     char *binInstr = (char *)malloc((WORD_SIZE - OPCODE_SIZE + 1) * sizeof(char));
     char *indexReg = NULL, *baseReg = NULL, *distance = NULL, *scale = NULL, *dest = NULL;
@@ -144,6 +180,11 @@ char *genLDSTbinInstr(char **tokens){
     return binInstr;
 }
 
+/**
+ * Utility function to decode LW and SW instructions
+ * @param tokens : 2d array that contains all parsed tokens from the expression
+ * @return : returns the decoded instruction (excluding the opcode)
+ */
 char *genLWSWbinInstr(char **tokens) {
     char *rt = NULL, *immVal = NULL, *rs = NULL;
     char *binInstr = (char *)malloc(sizeof(char) * (WORD_SIZE - OPCODE_SIZE));
@@ -170,31 +211,15 @@ char *genLWSWbinInstr(char **tokens) {
     return binInstr;
 }
 
-char *decimalToBinary(int toConvert, int numOfBits){
-    char *binary = (char *)malloc(sizeof(char) * numOfBits + 1);
-
-    mallocErrorCheck(binary);
-
-    binary[numOfBits] = '\0';
-    for(int i = numOfBits - 1; i >= 0; i--){
-        toConvert & 1 ? (binary[i] = '1') : (binary[i] = '0');
-        toConvert >>= 1;
-    }
-    return binary;
-}
-
-int binaryToDecimal(char *binary, int size) {
-    int num = 0;
-
-    for(int i = size - 1; i >= 0; i--) {
-        if(binary[i] == '1')
-            num += pow(2, size - 1 - i);
-    }
-    return num;
-}
-
-//ADD = 0, SUB = 1, MUL = 4, DIV = 2, MOD = 3
-//setFlags if 0 -> do not change the flags
+/**
+ *
+ * @param op : operation to perform
+ * @param opLeft : left hand operand
+ * @param opRight : right hand operand
+ * @param size : number of bits
+ * @param setFlags : should be 0 if we do not want it to modify flags
+ * @return return the evaluated expression
+ */
 char *ALU(int op, char *opLeft, char *opRight, int size, int setFlags) {
     char *left, *right, *result = NULL;
 
@@ -202,25 +227,33 @@ char *ALU(int op, char *opLeft, char *opRight, int size, int setFlags) {
     right = signExtend(opRight, size);
 
     switch(op){
-        case 0:
+        case ADD_OP:
             result = addBinary(left, right, size, setFlags);
             break;
-        case 1:
+        case SUB_OP:
             result = subBinary(left, right, size, setFlags);
             break;
-        case 2:
+        case DIV_OP:
             result = divBinary(left, right, NULL, size, setFlags);
             break;
-        case 3:
+        case MOD_OP:
             result = modBinary(left, right, size, setFlags);
             break;
-        case 4:
+        case MUL_OP:
 	        result = mulBinary(left, right, size, setFlags);
             break;
     }
     return result;
 }
 
+/**
+ * opLeft - opRight
+ * @param opLeft : left hand operand
+ * @param opRight : right hand operand
+ * @param size : number of bits
+ * @param setFlags : setFlags should be 0 if we do not want it to change flags
+ * @return : returns a string result of opLeft - opRight
+ */
 char *subBinary(char *opLeft, char *opRight, int size, int setFlags){
     char *right = NULL;
     // Getting Complement of A Number(The opcode which is on right side)
@@ -232,6 +265,14 @@ char *subBinary(char *opLeft, char *opRight, int size, int setFlags){
     return addBinary(opLeft, right, size, setFlags);
 }
 
+/**
+ * Function to add in binary. opLeft + opRight
+ * @param opLeft : left hand operand
+ * @param opRight : right hand operand
+ * @param size : number of bits
+ * @param setFlags : setFlags should be 0 if we should not change flags (ie for PC)
+ * @return
+ */
 char *addBinary (char *opLeft, char *opRight, int size, int setFlags){
     char carry = '0';
     char *sum = (char *)malloc(sizeof(char) * size + 1);
@@ -268,20 +309,120 @@ char *addBinary (char *opLeft, char *opRight, int size, int setFlags){
     return sum;
 }
 
-// This function takes Integer and convert into binary. The binary format is complement.
-char *decimalToComplementBinary(int toConvert, int numOfBits){
-    char *binary = (char *)malloc(sizeof(char) * numOfBits + 1);
-    mallocErrorCheck(binary);
+/**
+ * left MOD right
+ * @param left : left hand side of operand
+ * @param right : right and side of operand
+ * @param size : number of bits
+ * @param setFlags : specify whether you want flags changed. 0: don't change
+ * @return returns the modulus of the expression
+ */
+char* modBinary(char* left, char* right, int size, int setFlags)
+{
+    char *remainder = malloc(size + 1);
+    mallocErrorCheck(remainder);
+    remainder[size] = '\0';
 
-    binary[numOfBits] = '\0';
-    for(int i = numOfBits - 1; i >= 0; i--){
-           toConvert & 1 ? (binary[i] = '0') : (binary[i] = '1');
-           toConvert >>= 1;
-    }
-    return binary;
+    divBinary(left, right, &remainder, size, setFlags);
+
+    return remainder;
 }
 
 
+/**
+ * left MUL right
+ * @param left : left hand side operand
+ * @param right : right hand side operand
+ * @param size : number of bits
+ * @param setFlags : setFlags shoud be 0 if flags should not be changed
+ * @return : return the result of left MUL right
+ */
+char* mulBinary(char* left, char* right, int size, int setFlags)
+{
+    char *mul = (char *)malloc(sizeof(char) * size + 1);
+    mul[size] = '\0';
+    int op1 = binaryToDecimal(left, size);
+    int op2 = binaryToDecimal(right, size);
+
+    long result = 0;
+
+    if((op1 == INT_MIN && (op2 != 0 && op2 != 1)) || (op2 == INT_MIN && (op1 != 0 && op1 != 1)) && setFlags) { //very small # is a very large unsigned #
+        flags[OVERFLOW_FLAG] = '1';
+        printf("OVERFLOW ON INSTRUCTION\n");
+    }else flags[OVERFLOW_FLAG] = '0';
+
+    while(op2 != 0) {
+        if(op2 & 01) { //if odd
+            result = binaryToDecimal(addBinary(decimalToBinary(result, WORD_SIZE), decimalToBinary(op1, WORD_SIZE), WORD_SIZE, setFlags), WORD_SIZE);
+        }
+        op1 = op1 << 1;
+        op2 = op2 >> 1;
+    }
+
+    strcpy(mul, decimalToBinary(result, WORD_SIZE));
+    return mul;
+}
+
+/**
+ *
+ * @param left : left hand side operand
+ * @param right : right hand side operand
+ * @param remainder : if mod, pass remainder by reference to store the remainder in. Otherwise, pass NULL
+ * @param size : number of bits
+ * @param setFlags : specify whether flags are to be modified
+ * @return return the quotient
+ */
+char *divBinary(char *left, char *right, char **remainder, int size, int setFlags){
+    char *result = malloc(WORD_SIZE + 1);
+    mallocErrorCheck(result);
+    int curr = 1, res = 0;
+
+    int dividend = binaryToDecimal(left, WORD_SIZE);
+    int divisor = binaryToDecimal(right, WORD_SIZE);
+
+    int denom = divisor;
+
+    while(denom <= dividend){
+        denom <<= 1;
+        curr <<= 1;
+    }
+
+    denom >>= 1;
+    curr >>= 1;
+
+    while(curr != 0){
+        if(dividend >= denom){
+            dividend -= denom;
+            res |= curr;
+        }
+        curr >>= 1;
+        denom >>= 1;
+    }
+
+    strcpy(result, decimalToBinary(res, WORD_SIZE));
+
+    //set flags
+    if(remainder != NULL) { //this is not the modulus function so no need to save remainder
+        strcpy(*remainder, decimalToBinary(dividend, WORD_SIZE));
+        if(dividend == 0)
+            flags[ZERO_FLAG] = '1';
+        else flags[ZERO_FLAG] = '0';
+    }else{
+        if(res == 0)
+            flags[ZERO_FLAG] = '1';
+        else flags[ZERO_FLAG] = '0';
+    }
+
+    return result;
+}
+
+
+/**
+ * Sign extension unit to ensure data is the same size when performing operations
+ * @param value : value to extend
+ * @param size : maximum number of bits
+ * @return : returns a string to the extended value
+ */
 char *signExtend(char *value, int size){
 
     if(strlen(value) == size)
@@ -304,18 +445,10 @@ char *signExtend(char *value, int size){
     return extVal;
 }
 
-//inits the CPU- including inits the PC to initial value
-EXEC_INFO initCPU() {
-    EXEC_INFO info;
-
-    strcpy(PC, BOOT_ADDR);
-    info.heap_ptr = HEAP_SEGMENT;
-    info.stack_ptr = STACK_SEGMENT;
-    info.lines = 0;
-
-    return info;
-}
-
+/**
+ * Executes the given program in the text section of memory
+ * @param info : struct that contains execution information to load from memory
+ */
 void runProgram(EXEC_INFO info){
     char instr[WORD_SIZE + 1];
     char rd[RTYPE_RD_SIZE + 1];
@@ -456,7 +589,7 @@ void runProgram(EXEC_INFO info){
             strncpy(rs, instr + rsOffset, 8);
             strncpy(rt, instr + rtOffset, 8);
 
-            result = ALU(1, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
+            result = ALU(SUB_OP, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1); //execute instruction
             strcpy(regFile[binaryToDecimal(rd, RTYPE_RD_SIZE)], result);
 
         }else if((strncmp(ADD, instr, OPCODE_SIZE) == 0)) {
@@ -470,7 +603,7 @@ void runProgram(EXEC_INFO info){
             strncpy(rs, instr + rsOffset, 8);
             strncpy(rt, instr + rtOffset, 8);
 
-            result = ALU(0, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
+            result = ALU(ADD_OP, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1); //execute instruction
             strcpy(regFile[binaryToDecimal(rd, 10)], result);
         }else if(strncmp(MUL, instr, OPCODE_SIZE) == 0) { //MEM[$s + offset] = $t = sw $t, offset($s)
             char *result;
@@ -479,7 +612,7 @@ void runProgram(EXEC_INFO info){
             strncpy(rs, instr + OPCODE_SIZE + 10, 8);
             strncpy(rt, instr + OPCODE_SIZE + 10 + 8, 8);
 
-            result = ALU(4, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
+            result = ALU(MUL_OP, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
             strcpy(regFile[binaryToDecimal(rd, 10)], result);
         }else if(strncmp(MOD, instr, OPCODE_SIZE) == 0){
             char *result;
@@ -487,7 +620,7 @@ void runProgram(EXEC_INFO info){
             strncpy(rs, instr + OPCODE_SIZE + 10, 8);
             strncpy(rt, instr + OPCODE_SIZE + 10 + 8, 8);
 
-            result = ALU(3, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
+            result = ALU(MOD_OP, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
             strcpy(regFile[binaryToDecimal(rd, 10)], result);
         }else if(strncmp(DIV, instr, OPCODE_SIZE) == 0) {
             char *result;
@@ -495,15 +628,103 @@ void runProgram(EXEC_INFO info){
             strncpy(rs, instr + OPCODE_SIZE + 10, 8);
             strncpy(rt, instr + OPCODE_SIZE + 10 + 8, 8);
 
-            result = ALU(2, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
+            result = ALU(DIV_OP, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
             strcpy(regFile[binaryToDecimal(rd, 10)], result);
         }
 
-        strcpy(PC, ALU(0, PC, "1", 16, 0)); //move to next instruction
+        strcpy(PC, ALU(ADD_OP, PC, "1", 16, 0)); //move to next instruction
         printExecutionData(i);
     }
 }
 
+char* leftShift(char* input, int size)
+{
+    char *result=NULL;
+    int num= binaryToDecimal(input, size);
+    num = num << 1;
+    result= decimalToBinary(num, size);
+    return result;
+}
+
+char* rightShift(char* input, int size)
+{
+    char *result=NULL;
+    int num= binaryToDecimal(input, size);
+    num = num >> 1;
+    result= decimalToBinary(num, size);
+    return result;
+    
+}
+
+/**
+ * Utility function to convert from decimal to binary string
+ * @param toConvert : number to convert
+ * @param numOfBits : number of bits
+ * @return returns the binary string representation for the decimal
+ */
+char *decimalToBinary(int toConvert, int numOfBits){
+    char *binary = (char *)malloc(sizeof(char) * numOfBits + 1);
+
+    mallocErrorCheck(binary);
+
+    binary[numOfBits] = '\0';
+    for(int i = numOfBits - 1; i >= 0; i--){
+        toConvert & 1 ? (binary[i] = '1') : (binary[i] = '0');
+        toConvert >>= 1;
+    }
+    return binary;
+}
+
+/**
+ * Utility function to convert from binary to decimal
+ * @param binary : string that contains binary pattern
+ * @param size  : number of bits
+ * @return returns the string converted to a decimal
+ */
+int binaryToDecimal(char *binary, int size) {
+    int num = 0;
+
+    for(int i = size - 1; i >= 0; i--) {
+        if(binary[i] == '1')
+            num += pow(2, size - 1 - i);
+    }
+    return num;
+}
+
+/**
+ * Takes a decimal and inverts the bits
+ * @param toConvert : number to invert
+ * @param numOfBits : number of bits
+ * @return returns a string of bits. The result is ~toConvert
+ */
+char *decimalToComplementBinary(int toConvert, int numOfBits){
+    char *binary = (char *)malloc(sizeof(char) * numOfBits + 1);
+    mallocErrorCheck(binary);
+
+    binary[numOfBits] = '\0';
+    for(int i = numOfBits - 1; i >= 0; i--){
+        toConvert & 1 ? (binary[i] = '0') : (binary[i] = '1');
+        toConvert >>= 1;
+    }
+    return binary;
+}
+
+
+/**
+ * @param ptr : pointer to the memory to check
+ */
+void mallocErrorCheck(char *ptr){
+    if(ptr == NULL){
+        printf("Error on malloc. Exiting\n");
+        exit(1);
+    }
+}
+
+
+/**
+ * Function to simplify printing execution data
+ * @param instrNum : the offset of the instruction to print
+ */
 void printExecutionData(int instrNum){
     char instrBuilder[250];
     char *instrFromMem = memory[TEXT_SEGMENT + instrNum];
@@ -581,114 +802,9 @@ void printExecutionData(int instrNum){
     printf("********************************************************************************************\n");
 }
 
-
-char* mulBinary(char* left, char* right, int size, int setFlags)
-{
-    char *mul = (char *)malloc(sizeof(char) * size + 1);
-    mul[size] = '\0';
-    int op1 = binaryToDecimal(left, size);
-    int op2 = binaryToDecimal(right, size);
-
-    long result = 0;
-
-    if((op1 == INT_MIN && (op2 != 0 && op2 != 1)) || (op2 == INT_MIN && (op1 != 0 && op1 != 1)) && setFlags) { //very small # is a very large unsigned #
-        flags[OVERFLOW_FLAG] = '1';
-        printf("OVERFLOW ON INSTRUCTION\n");
-    }else flags[OVERFLOW_FLAG] = '0';
-
-    while(op2 != 0) {
-        if(op2 & 01) { //if odd
-            result = binaryToDecimal(addBinary(decimalToBinary(result, WORD_SIZE), decimalToBinary(op1, WORD_SIZE), WORD_SIZE, setFlags), WORD_SIZE);
-        }
-        op1 = op1 << 1;
-        op2 = op2 >> 1;
-    }
-
-    strcpy(mul, decimalToBinary(result, WORD_SIZE));
-    return mul;
-}
-
-char* leftShift(char* input, int size)
-{
-    char *result=NULL;
-    int num= binaryToDecimal(input, size);
-    num = num << 1;
-    result= decimalToBinary(num, size);
-    return result;
-}
-
-char* rightShift(char* input, int size)
-{
-    char *result=NULL;
-    int num= binaryToDecimal(input, size);
-    num = num >> 1;
-    result= decimalToBinary(num, size);
-    return result;
-    
-}
-
-char* modBinary(char* left, char* right, int size, int setFlags)
-{
-    char *remainder = malloc(WORD_SIZE + 1);
-    mallocErrorCheck(remainder);
-    remainder[WORD_SIZE] = '\0';
-
-    divBinary(left, right, &remainder, WORD_SIZE, setFlags);
-
-    return remainder;
-}
-
-char *divBinary(char *left, char *right, char **remainder, int size, int setFlags){
-    char *result = malloc(WORD_SIZE + 1);
-    mallocErrorCheck(result);
-    int curr = 1, res = 0;
-
-    int dividend = binaryToDecimal(left, WORD_SIZE);
-    int divisor = binaryToDecimal(right, WORD_SIZE);
-
-    int denom = divisor;
-
-    while(denom <= dividend){
-        denom <<= 1;
-        curr <<= 1;
-    }
-
-    denom >>= 1;
-    curr >>= 1;
-
-    while(curr != 0){
-        if(dividend >= denom){
-            dividend -= denom;
-            res |= curr;
-        }
-        curr >>= 1;
-        denom >>= 1;
-    }
-
-    strcpy(result, decimalToBinary(res, WORD_SIZE));
-
-    //set flags
-    if(remainder != NULL) { //this is not the modulus function so no need to save remainder
-        strcpy(*remainder, decimalToBinary(dividend, WORD_SIZE));
-        if(dividend == 0)
-            flags[ZERO_FLAG] = '1';
-        else flags[ZERO_FLAG] = '0';
-    }else{
-        if(res == 0)
-            flags[ZERO_FLAG] = '1';
-        else flags[ZERO_FLAG] = '0';
-    }
-
-    return result;
-}
-
-void mallocErrorCheck(char *ptr){
-    if(ptr == NULL){
-        printf("Error on malloc. Exiting\n");
-        exit(1);
-    }
-}
-
+/**
+ * Utility function for printing for R type instructions
+ */
 char *buildInstrForRTypePrint(char *instr, char *instrName){
     char rs[RTYPE_ADDR_SIZE + 1], rt[RTYPE_ADDR_SIZE + 1], rd[RTYPE_RD_SIZE + 1], imm[IMM_SIZE + 1];
     char instrBuilder[250];

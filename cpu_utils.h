@@ -40,6 +40,13 @@
 #define OVERFLOW_FLAG 1
 #define ZERO_FLAG 0
 
+//operations for ALU
+#define ADD_OP 0
+#define SUB_OP 1
+#define DIV_OP 2
+#define MOD_OP 3
+#define MUL_OP 4
+
 //WORD_SIZE + 1 for /0 for debugging and printing
 extern char *memory[MEM_ROWS]; //64kb mem
 extern char *regFile[NUM_REG];
