@@ -67,4 +67,8 @@ char *decimalToComplementBinary(int toConvert, int numOfBits);
 int binaryToDecimal(char *binary, int size);
 
 void printExecutionData(int instrNum);
+
+char* mulBinary(char* left, char* right, int size, int setFlags);
+char* leftShift(char* input, int size);
+char* rightShift(char* input, int size);
 #endif //DESIGN_ISA_CPU_UTILS_H

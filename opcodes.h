@@ -15,6 +15,7 @@ const char *ST = "100100";
 //R Types and functions
 const char *ADD = "000001";
 const char *SUB = "000010";
+const char *MUL = "000011";
 
 //J Types
 

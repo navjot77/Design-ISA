@@ -79,6 +79,10 @@ char *convertInstrToBin(char *instr) {
         strcpy(binInstr, ADD);
         strcpy(binInstr + OPCODE_SIZE, genRTypeInstr(tokens));
     }
+    else if(strcmp(tokens[0], "mul") == 0){
+        strcpy(binInstr, MUL);
+        strcpy(binInstr + OPCODE_SIZE, genRTypeInstr(tokens));
+    }
 
     binInstr[WORD_SIZE] = '\0';
     return binInstr;
@@ -189,6 +193,7 @@ char *ALU(int op, char *opLeft, char *opRight, int size, int setFlags) {
         case 3:
             break;
         case 4:
+	    result = mulBinary(left, right, size, setFlags);
             break;
     }
     return result;
@@ -412,6 +417,16 @@ void printExecutionData(int instrNum){
 
         sprintf(instrBuilder, "%s $%d, $%d, $%d", "SUB", binaryToDecimal(rd, 10), binaryToDecimal(rs, 8), binaryToDecimal(rt, 8));
     }
+    else if(strncmp(MUL, instrFromMem, OPCODE_SIZE) == 0) { //MEM[$s + offset] = $t = sw $t, offset($s)
+        char *result;
+        strncpy(rd, instrFromMem + OPCODE_SIZE, 10);
+        strncpy(rs, instrFromMem + OPCODE_SIZE + 10, 8);
+        strncpy(rt, instrFromMem + OPCODE_SIZE + 10 + 8, 8);
+        result = ALU(4, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
+        printf("Result for mul is ********************* %s\n",result);
+        strcpy(regFile[binaryToDecimal(rd, 10)], result);
+     }
+
     printf("%-30s %-40s %-30s\n", "Instruction", "Binary representation", "Program Counter");
     printf("%-30s %-40s %-30s\n", instrBuilder, instrFromMem, PC);
     printf("%-30s %-40s %-40s\n", "Memory Address", "Memory Data", "Flags");
@@ -422,4 +437,55 @@ void printExecutionData(int instrNum){
         printf("\t$%d \t\t%-20s\n", i, regFile[i]);
     }
     printf("********************************************************************************************\n");
+}
+
+
+char* mulBinary(char* left, char* right, int size, int setFlags)
+{
+    size*=2;
+    char *mul = (char *)malloc(sizeof(char) * size);
+    if(mul==NULL)
+        exit;
+        
+    for(int i=0; i<size; i++)
+    {
+        mul[i]='0';
+        
+    }
+    mul[(2*size)]='\0';
+    
+    for(int pos=size-1; pos>=0; pos--)
+    {
+        if(right[size-1]!='0')
+        {
+            int setFlags=0;
+            mul= addBinary(mul, left, size, setFlags);
+            
+        }
+        int size1= strlen(left);
+        left= leftShift(left, size1);
+        right= rightShift(right, size1);
+    }
+    
+    
+    return mul;
+}
+
+char* leftShift(char* input, int size)
+{
+    char *result=NULL;
+    int num= binaryToDecimal(input, size);
+    num<<1;
+    result= decimalToBinary(num, size);
+    return result;
+}
+
+char* rightShift(char* input, int size)
+{
+    char *result=NULL;
+    int num= binaryToDecimal(input, size);
+    num>>1;
+    result= decimalToBinary(num, size);
+    return result;
+    
 }
