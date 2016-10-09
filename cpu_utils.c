@@ -191,7 +191,7 @@ char *ALU(int op, char *opLeft, char *opRight, int size, int setFlags) {
         case 3:
             break;
         case 4:
-	    result = mulBinary(left, right, size, setFlags);
+	        result = mulBinary(left, right, size, setFlags);
             break;
     }
     return result;
@@ -448,13 +448,13 @@ void runProgram(EXEC_INFO info){
             result = ALU(0, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
             strcpy(regFile[binaryToDecimal(rd, 10)], result);
         }else if(strncmp(MUL, instr, OPCODE_SIZE) == 0) { //MEM[$s + offset] = $t = sw $t, offset($s)
-        char *result;
-        strncpy(rd, instr + OPCODE_SIZE, 10);
-        strncpy(rs, instr + OPCODE_SIZE + 10, 8);
-        strncpy(rt, instr + OPCODE_SIZE + 10 + 8, 8);
-        result = ALU(4, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
-        printf("Result for mul is ********************* %s\n",result);
-        strcpy(regFile[binaryToDecimal(rd, 10)], result);
+            char *result;
+            strncpy(rd, instr + OPCODE_SIZE, 10);
+            strncpy(rs, instr + OPCODE_SIZE + 10, 8);
+            strncpy(rt, instr + OPCODE_SIZE + 10 + 8, 8);
+
+            result = ALU(4, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
+            strcpy(regFile[binaryToDecimal(rd, 10)], result);
      }
 
         strcpy(PC, ALU(0, PC, "1", 16, 0)); //move to next instruction
@@ -539,10 +539,10 @@ void printExecutionData(int instrNum){
         strncpy(rd, instrFromMem + OPCODE_SIZE, 10);
         strncpy(rs, instrFromMem + OPCODE_SIZE + 10, 8);
         strncpy(rt, instrFromMem + OPCODE_SIZE + 10 + 8, 8);
-        result = ALU(4, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
-        printf("Result for mul is ********************* %s\n",result);
-        strcpy(regFile[binaryToDecimal(rd, 10)], result);
-     }
+
+        sprintf(instrBuilder, "%s $%d, $%d, $%d", "MUL", binaryToDecimal(rd, 10), binaryToDecimal(rs, 8), binaryToDecimal(rt, 8));
+
+    }
 
     printf("%-30s %-40s %-30s\n", "Instruction", "Binary representation", "Program Counter");
     printf("%-30s %-40s %-30s\n", instrBuilder, instrFromMem, PC);
@@ -559,32 +559,21 @@ void printExecutionData(int instrNum){
 
 char* mulBinary(char* left, char* right, int size, int setFlags)
 {
-    size*=2;
-    char *mul = (char *)malloc(sizeof(char) * size);
-    if(mul==NULL)
-        exit;
-        
-    for(int i=0; i<size; i++)
-    {
-        mul[i]='0';
-        
-    }
-    mul[(2*size)]='\0';
-    
-    for(int pos=size-1; pos>=0; pos--)
-    {
-        if(right[size-1]!='0')
-        {
-            int setFlags=0;
-            mul= addBinary(mul, left, size, setFlags);
-            
+    char *mul = (char *)malloc(sizeof(char) * size + 1);
+    mul[size] = '\0';
+    int op1 = binaryToDecimal(left, size);
+    int op2 = binaryToDecimal(right, size);
+
+    int result = 0;
+
+    while(op2 != 0) {
+        if(op2 & 01) {
+            result = binaryToDecimal(addBinary(decimalToBinary(result, WORD_SIZE), decimalToBinary(op1, WORD_SIZE), WORD_SIZE, 0), WORD_SIZE);
         }
-        int size1= strlen(left);
-        left= leftShift(left, size1);
-        right= rightShift(right, size1);
+        op1 = op1 << 1;
+        op2 = op2 >> 1;
     }
-    
-    
+    strcpy(mul, decimalToBinary(result, WORD_SIZE));
     return mul;
 }
 
@@ -592,7 +581,7 @@ char* leftShift(char* input, int size)
 {
     char *result=NULL;
     int num= binaryToDecimal(input, size);
-    num<<1;
+    num = num << 1;
     result= decimalToBinary(num, size);
     return result;
 }
@@ -601,7 +590,7 @@ char* rightShift(char* input, int size)
 {
     char *result=NULL;
     int num= binaryToDecimal(input, size);
-    num>>1;
+    num = num >> 1;
     result= decimalToBinary(num, size);
     return result;
     
