@@ -54,9 +54,12 @@ char *ALU(int op, char *opLeft, char *opRight, int size, int setFlags);
 char *addBinary (char *opLeft, char *opRight, int size, int setFlags);
 char *signExtend(char *value, int size);
 char *convertInstrToBin(char *instr);
-char *genLWSWbinInstr(char **tokens, int params);
 
-char *convertToBin(int toConvert, bool isImmVal);
+//functions for decoding instructions
+char *genLWSWbinInstr(char **tokens, int params);
+char *genLDSTbinInstr(char **tokens, int params);
+
+//char *convertToBin(int toConvert, bool isImmVal);
 char *decimalToBinary(int toConvert, int numOfBits);
 int binaryToDecimal(char *binary, int size);
 

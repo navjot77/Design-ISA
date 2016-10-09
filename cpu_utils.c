@@ -5,8 +5,11 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include "cpu_utils.h"
 #include "opcodes.h"
+
+#define MAX_TOKENS 10U
 
 void loadAndStoreInstrs(char *fileName, EXEC_INFO *info){
     FILE *fp = NULL;
@@ -29,7 +32,7 @@ void loadAndStoreInstrs(char *fileName, EXEC_INFO *info){
 }
 
 char *convertInstrToBin(char *instr) {
-    char *tokens[5];
+    char *tokens[MAX_TOKENS];
     char *token;
     char *binInstr = (char *)malloc(sizeof(char) * WORD_SIZE);
 
@@ -37,14 +40,15 @@ char *convertInstrToBin(char *instr) {
     strcpy(temp, instr);
 
     //init tokens array so we know how many args for instr
-    for(int i = 0; i < 5; i++)
+    for(int i = 0; i < MAX_TOKENS; i++)
         tokens[i] = NULL;
 
     //get opcode
     token = strtok(temp, " ");
-
+    //change instruction name to lowercase
     for(int i = 0; i < strlen(token); i++)
         token[i] = (char)tolower(token[i]);
+
     tokens[0] = (char *)malloc(sizeof(char) * strlen(token) + 1);
     strcpy(tokens[0], token);
     tokens[0][strlen(token)] = '\0';
@@ -65,27 +69,44 @@ char *convertInstrToBin(char *instr) {
     }else if(strcmp(tokens[0], "sw") == 0){
         strcpy(binInstr, SW);
         strcpy(binInstr + OPCODE_SIZE, genLWSWbinInstr(tokens, params));
+    }else if(strcmp(tokens[0], "ld") == 0){
+        strcpy(binInstr, LD);
     }
 
     binInstr[WORD_SIZE] = '\0';
-    printf("%s\n", binInstr);
+
+    //free memory
+    for(int i = 0; i < params + 1;  i++) {
+        free(tokens[i]);
+    }
+    free(temp);
     return binInstr;
+}
+
+char *genLDSTbinInstr(char **tokens, int params){
+    char *indexReg = NULL, *baseReg = NULL, *distance = NULL, *scale = NULL, *dest = NULL;
+    // $reg, distance(base, index, scale)
+
+    //get destination
+    dest = decimalToBinary(atoi(tokens[1] + 1), RS_SIZE);
+    //distance = ;
+
 }
 
 char *genLWSWbinInstr(char **tokens, int params) {
     char *rt = NULL, *immVal = NULL, *rs = NULL;
     char *binInstr = (char *)malloc(sizeof(char) * WORD_SIZE);
 
-    rt= convertToBin(atoi(strchr(tokens[1], '$') + 1), false);
+    rt= decimalToBinary(atoi(strchr(tokens[1], '$') + 1), RT_SIZE);
 
     char *leftParens = strchr(tokens[params], '(');
     *leftParens = '\0';
-    immVal = convertToBin(atoi(tokens[params]), true);
+    immVal = decimalToBinary(atoi(tokens[params]), IMM_SIZE);
 
     char *rightParens = strchr(leftParens + 1, ')');
     *rightParens = '\0';
     leftParens += 2;
-    rs = convertToBin(atoi(leftParens), false);
+    rs = decimalToBinary(atoi(leftParens), RS_SIZE);
 
     //build the converted string here
     strcpy(binInstr, rs);
@@ -93,17 +114,6 @@ char *genLWSWbinInstr(char **tokens, int params) {
     strcat(binInstr, immVal);
     binInstr[WORD_SIZE] = '\0';
     return binInstr;
-}
-
-// converts number to binary rep. if not imm then it is an address so only 5 bits needed
-char *convertToBin(int toConvert, bool isImmVal) {
-
-    if(!isImmVal){ //not imm so it is an addr
-        return decimalToBinary(toConvert, 5);
-    }else{
-        return decimalToBinary(toConvert, 16);
-    }
-    return NULL;
 }
 
 char *decimalToBinary(int toConvert, int numOfBits){

@@ -8,9 +8,12 @@
 //I Types
 const char *LW = "100011";
 const char *SW = "101011";
+const char *ADDI = "100001";
+const char *LD = "100010";
+const char *ST = "100100";
 
 //R Types and functions
-const char *R_TYPE = "000000";
+const char *ADD = "000001";
 
 //J Types
 
