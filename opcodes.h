@@ -16,6 +16,8 @@ const char *ST = "100100";
 const char *ADD = "000001";
 const char *SUB = "000010";
 const char *MUL = "000011";
+const char *DIV = "000100";
+const char *MOD = "000101";
 
 //J Types
 

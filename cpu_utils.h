@@ -11,10 +11,12 @@
 
 //instruction breakdown
 #define OPCODE_SIZE 6
-#define RS_SIZE 5
-#define RT_SIZE 5
+#define REG_ADDR_SIZE 5
+#define RTYPE_ADDR_SIZE 8
 #define IMM_SIZE 16
-#define MAX_SIZE 10
+#define DIST_SIZE 7
+#define SCALE_SIZE 4
+#define RTYPE_RD_SIZE 10
 
 //memory start addresses
 #define TEXT_SEGMENT 512    //where text segment begins
@@ -57,9 +59,12 @@ void runProgram(EXEC_INFO info);
 char *ALU(int op, char *opLeft, char *opRight, int size, int setFlags);
 char *addBinary (char *opLeft, char *opRight, int size, int setFlags);
 char *subBinary (char *opLeft, char *opRight, int size, int setFlags);
-char* mulBinary(char* left, char* right, int size, int setFlags);
-char* leftShift(char* input, int size);
-char* rightShift(char* input, int size);
+char *mulBinary(char* left, char* right, int size, int setFlags);
+char *modBinary(char *left, char *right, int size, int setFlags);
+char *divBinary(char *left, char *right, int size, int setFlags);
+
+char *leftShift(char* input, int size);
+char *rightShift(char* input, int size);
 char *signExtend(char *value, int size);
 char *convertInstrToBin(char *instr);
 
@@ -74,5 +79,7 @@ char *decimalToComplementBinary(int toConvert, int numOfBits);
 int binaryToDecimal(char *binary, int size);
 
 void printExecutionData(int instrNum);
+void mallocErrorCheck(char *ptr);
+char *buildInstrForRTypePrint(char *instr, char *instrName);
 
 #endif //DESIGN_ISA_CPU_UTILS_H
