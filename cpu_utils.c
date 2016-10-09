@@ -74,10 +74,11 @@ char *convertInstrToBin(char *instr) {
     token = strtok(temp, " ");
     if(token == NULL){
         printf("Error. Expected token\n");
+    }else{
+        //change instruction name to lowercase
+        for (int i = 0; i < strlen(token); i++)
+            token[i] = (char) tolower(token[i]);
     }
-    //change instruction name to lowercase
-    for (int i = 0; i < strlen(token); i++)
-        token[i] = (char) tolower(token[i]);
 
     tokens[0] = (char *) malloc(sizeof(char) * strlen(token) + 1);
     mallocErrorCheck(tokens[0]);
@@ -242,6 +243,9 @@ char *ALU(int op, char *opLeft, char *opRight, int size, int setFlags) {
         case MUL_OP:
 	        result = mulBinary(left, right, size, setFlags);
             break;
+        default:
+            printf("Error. No matching operation.\n");
+            break;
     }
     return result;
 }
@@ -319,7 +323,7 @@ char *addBinary (char *opLeft, char *opRight, int size, int setFlags){
  */
 char* modBinary(char* left, char* right, int size, int setFlags)
 {
-    char *remainder = malloc(size + 1);
+    char *remainder = (char *)malloc(sizeof(char) * size + 1);
     mallocErrorCheck(remainder);
     remainder[size] = '\0';
 
@@ -506,7 +510,7 @@ void runProgram(EXEC_INFO info){
 
         }else if(strncmp(LD, instr, OPCODE_SIZE) == 0) {
             // $reg, distance(base, index, scale) 5 7 5 5 4
-            int rdOffset = OPCODE_SIZE;
+            rdOffset = OPCODE_SIZE;
             int distanceOffset = OPCODE_SIZE + REG_ADDR_SIZE;
             int baseOffset = distanceOffset + DIST_SIZE;
             int indexOffset = baseOffset + REG_ADDR_SIZE;
@@ -531,8 +535,8 @@ void runProgram(EXEC_INFO info){
 
             //calculate address
             int distVal = binaryToDecimal(dist, DIST_SIZE);
-            int baseVal = binaryToDecimal(regFile[binaryToDecimal(base, REG_ADDR_SIZE)], 32);
-            int indexVal = binaryToDecimal(regFile[binaryToDecimal(index, REG_ADDR_SIZE)], 32);
+            int baseVal = binaryToDecimal(regFile[binaryToDecimal(base, REG_ADDR_SIZE)], WORD_SIZE);
+            int indexVal = binaryToDecimal(regFile[binaryToDecimal(index, REG_ADDR_SIZE)], WORD_SIZE);
             int scaleVal = binaryToDecimal(scale, SCALE_SIZE);
 
             memLoc = distVal + baseVal + (indexVal * scaleVal);
@@ -547,19 +551,19 @@ void runProgram(EXEC_INFO info){
             // $reg, distance(base, index, scale) 5 7 5 5 4
             int rdOffset = OPCODE_SIZE;
             int distanceOffset = OPCODE_SIZE + REG_ADDR_SIZE;
-            int baseOffset = distanceOffset + 7;
+            int baseOffset = distanceOffset + DIST_SIZE;
             int indexOffset = baseOffset + REG_ADDR_SIZE;
             int scaleOffset = indexOffset + REG_ADDR_SIZE;
 
-            char dist[8];
+            char dist[DIST_SIZE + 1];
             char base[REG_ADDR_SIZE + 1];
             char index[REG_ADDR_SIZE + 1];
-            char scale[5];
+            char scale[SCALE_SIZE + 1];
 
-            dist[7] = '\0';
+            dist[DIST_SIZE] = '\0';
             base[REG_ADDR_SIZE] = '\0';
             index[REG_ADDR_SIZE] = '\0';
-            scale[4] = '\0';
+            scale[SCALE_SIZE] = '\0';
             rd[REG_ADDR_SIZE] = '\0';
 
             strncpy(rd, instr + rdOffset, REG_ADDR_SIZE);
@@ -569,27 +573,28 @@ void runProgram(EXEC_INFO info){
             strncpy(scale, instr + scaleOffset, SCALE_SIZE);
 
             //calculate address
-            int distVal = binaryToDecimal(dist, 7);
-            int baseVal = binaryToDecimal(regFile[binaryToDecimal(base, REG_ADDR_SIZE)], 32);
-            int indexVal = binaryToDecimal(regFile[binaryToDecimal(index, REG_ADDR_SIZE)], 32);
-            int scaleVal = binaryToDecimal(scale, 4);
+            int distVal = binaryToDecimal(dist, DIST_SIZE);
+            int baseVal = binaryToDecimal(regFile[binaryToDecimal(base, REG_ADDR_SIZE)], WORD_SIZE);
+            int indexVal = binaryToDecimal(regFile[binaryToDecimal(index, REG_ADDR_SIZE)], WORD_SIZE);
+            int scaleVal = binaryToDecimal(scale, SCALE_SIZE);
 
             memLoc = distVal + baseVal + (indexVal * scaleVal);
             strcpy(memAddr, decimalToBinary(memLoc, WORD_SIZE));
             strcpy(memData, regFile[binaryToDecimal(rd, REG_ADDR_SIZE)]);
             strcpy(memory[memLoc], memData);
-        }else if(strncmp(SUB, instr, OPCODE_SIZE) == 0) { //MEM[$s + offset] = $t = sw $t, offset($s)
+
+        }else if(strncmp(SUB, instr, OPCODE_SIZE) == 0) {
             char *result;
 
             rdOffset = OPCODE_SIZE;
             rsOffset = rdOffset + RTYPE_RD_SIZE;
-            rtOffset = rsOffset + 8;
+            rtOffset = rsOffset + RTYPE_ADDR_SIZE;
 
             strncpy(rd, instr + rdOffset, RTYPE_RD_SIZE);
-            strncpy(rs, instr + rsOffset, 8);
-            strncpy(rt, instr + rtOffset, 8);
+            strncpy(rs, instr + rsOffset, RTYPE_ADDR_SIZE);
+            strncpy(rt, instr + rtOffset, RTYPE_ADDR_SIZE);
 
-            result = ALU(SUB_OP, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1); //execute instruction
+            result = ALU(SUB_OP, regFile[binaryToDecimal(rs, RTYPE_ADDR_SIZE)], regFile[binaryToDecimal(rt, RTYPE_ADDR_SIZE)], WORD_SIZE, 1); //execute instruction
             strcpy(regFile[binaryToDecimal(rd, RTYPE_RD_SIZE)], result);
 
         }else if((strncmp(ADD, instr, OPCODE_SIZE) == 0)) {
@@ -597,42 +602,42 @@ void runProgram(EXEC_INFO info){
 
             rdOffset = OPCODE_SIZE;
             rsOffset = rdOffset + RTYPE_RD_SIZE;
-            rtOffset = rsOffset + 8;
+            rtOffset = rsOffset + RTYPE_ADDR_SIZE;
 
             strncpy(rd, instr + rdOffset, RTYPE_RD_SIZE);
-            strncpy(rs, instr + rsOffset, 8);
-            strncpy(rt, instr + rtOffset, 8);
+            strncpy(rs, instr + rsOffset, RTYPE_ADDR_SIZE);
+            strncpy(rt, instr + rtOffset, RTYPE_ADDR_SIZE);
 
-            result = ALU(ADD_OP, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1); //execute instruction
-            strcpy(regFile[binaryToDecimal(rd, 10)], result);
-        }else if(strncmp(MUL, instr, OPCODE_SIZE) == 0) { //MEM[$s + offset] = $t = sw $t, offset($s)
+            result = ALU(ADD_OP, regFile[binaryToDecimal(rs, RTYPE_ADDR_SIZE)], regFile[binaryToDecimal(rt, RTYPE_ADDR_SIZE)], WORD_SIZE, 1); //execute instruction
+            strcpy(regFile[binaryToDecimal(rd, RTYPE_RD_SIZE)], result);
+        }else if(strncmp(MUL, instr, OPCODE_SIZE) == 0) {
             char *result;
 
-            strncpy(rd, instr + OPCODE_SIZE, 10);
-            strncpy(rs, instr + OPCODE_SIZE + 10, 8);
-            strncpy(rt, instr + OPCODE_SIZE + 10 + 8, 8);
+            strncpy(rd, instr + OPCODE_SIZE, RTYPE_RD_SIZE);
+            strncpy(rs, instr + OPCODE_SIZE + RTYPE_RD_SIZE, RTYPE_ADDR_SIZE);
+            strncpy(rt, instr + OPCODE_SIZE + RTYPE_RD_SIZE + RTYPE_ADDR_SIZE, RTYPE_ADDR_SIZE);
 
-            result = ALU(MUL_OP, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
-            strcpy(regFile[binaryToDecimal(rd, 10)], result);
+            result = ALU(MUL_OP, regFile[binaryToDecimal(rs, RTYPE_ADDR_SIZE)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
+            strcpy(regFile[binaryToDecimal(rd, RTYPE_RD_SIZE)], result);
         }else if(strncmp(MOD, instr, OPCODE_SIZE) == 0){
             char *result;
-            strncpy(rd, instr + OPCODE_SIZE, 10);
-            strncpy(rs, instr + OPCODE_SIZE + 10, 8);
-            strncpy(rt, instr + OPCODE_SIZE + 10 + 8, 8);
+            strncpy(rd, instr + OPCODE_SIZE, RTYPE_RD_SIZE);
+            strncpy(rs, instr + OPCODE_SIZE + RTYPE_RD_SIZE, RTYPE_ADDR_SIZE);
+            strncpy(rt, instr + OPCODE_SIZE + RTYPE_RD_SIZE + RTYPE_ADDR_SIZE, RTYPE_ADDR_SIZE);
 
-            result = ALU(MOD_OP, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
-            strcpy(regFile[binaryToDecimal(rd, 10)], result);
+            result = ALU(MOD_OP, regFile[binaryToDecimal(rs, RTYPE_ADDR_SIZE)], regFile[binaryToDecimal(rt, RTYPE_ADDR_SIZE)], WORD_SIZE, 1);
+            strcpy(regFile[binaryToDecimal(rd, RTYPE_RD_SIZE)], result);
         }else if(strncmp(DIV, instr, OPCODE_SIZE) == 0) {
             char *result;
-            strncpy(rd, instr + OPCODE_SIZE, 10);
-            strncpy(rs, instr + OPCODE_SIZE + 10, 8);
-            strncpy(rt, instr + OPCODE_SIZE + 10 + 8, 8);
+            strncpy(rd, instr + OPCODE_SIZE, RTYPE_RD_SIZE);
+            strncpy(rs, instr + OPCODE_SIZE + RTYPE_RD_SIZE, RTYPE_ADDR_SIZE);
+            strncpy(rt, instr + OPCODE_SIZE + RTYPE_RD_SIZE + RTYPE_ADDR_SIZE, RTYPE_ADDR_SIZE);
 
-            result = ALU(DIV_OP, regFile[binaryToDecimal(rs, 8)], regFile[binaryToDecimal(rt, 8)], WORD_SIZE, 1);
-            strcpy(regFile[binaryToDecimal(rd, 10)], result);
+            result = ALU(DIV_OP, regFile[binaryToDecimal(rs, RTYPE_ADDR_SIZE)], regFile[binaryToDecimal(rt, RTYPE_ADDR_SIZE)], WORD_SIZE, 1);
+            strcpy(regFile[binaryToDecimal(rd, RTYPE_RD_SIZE)], result);
         }
 
-        strcpy(PC, ALU(ADD_OP, PC, "1", 16, 0)); //move to next instruction
+        strcpy(PC, ALU(ADD_OP, PC, "1", PC_SIZE, 0)); //move to next instruction
         printExecutionData(i);
     }
 }
