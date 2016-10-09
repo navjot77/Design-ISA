@@ -150,11 +150,28 @@ char *ALU(int op, char *opLeft, char *opRight, int size, int setFlags) {
             result = addBinary(left, right, size, setFlags);
             break;
         case 1:
+            result = subBinary(left, right, size, setFlags);
             break;
         case 2:
             break;
     }
     return result;
+}
+
+char *subBinary(char *opLeft, char *opRight, int size, int setFlags){
+
+    // Hard coding for testing purpose.
+    char *opRght="0111111111111111";
+    char *opLft="0001111110111110";
+
+    
+    // Getting Complement of A Number(The opcode which is on right side)
+    opRght=decimalToComplementBinary(binaryToDecimal(opRght,16),16);
+    
+    // Adding 1 to the complement of operand
+    opRght=addBinary("0000000000000001",opRght,16,setFlags);        
+    
+    return addBinary(opLft,opRght,16,setFlags);
 }
 
 char *addBinary (char *opLeft, char *opRight, int size, int setFlags){
@@ -190,6 +207,18 @@ char *addBinary (char *opLeft, char *opRight, int size, int setFlags){
     }
     return sum;
 }
+
+// This function takes Integer and convert into binary. The binary format is complement.
+char *decimalToComplementBinary(int toConvert, int numOfBits){
+    char *binary = (char *)malloc(sizeof(char) * numOfBits + 1);
+    binary[numOfBits] = '\0';
+    for(int i = numOfBits - 1; i >= 0; i--){
+           toConvert & 1 ? (binary[i] = '0') : (binary[i] = '1');
+           toConvert >>= 1;
+    }
+    return binary;
+    }
+
 
 char *signExtend(char *value, int size){
 
@@ -228,11 +257,13 @@ EXEC_INFO initCPU() {
 
 void runProgram(EXEC_INFO info){
     char instr[WORD_SIZE + 1];
+    char rd[RS_SIZE + 1];
     char rs[RS_SIZE + 1];
     char rt[RT_SIZE + 1];
     char imm[IMM_SIZE + 1];
 
     imm[IMM_SIZE] = '\0';
+    rd[RS_SIZE] = '\0';
     rs[RS_SIZE] = '\0';
     rt[RT_SIZE] = '\0';
 
@@ -240,7 +271,7 @@ void runProgram(EXEC_INFO info){
     int memLoc;
 
     for(int i = 0; i < info.lines; i++){
-        //fetch instr from mem
+	//fetch instr from mem
         memLoc = binaryToDecimal(PC, PC_SIZE);
         strcpy(instr, memory[memLoc]);
 
@@ -270,6 +301,15 @@ void runProgram(EXEC_INFO info){
             printf("Data stored in Memory Address %d is %d\n",  binaryToDecimal(memAddr, WORD_SIZE), binaryToDecimal(memory[binaryToDecimal(memAddr, WORD_SIZE)], WORD_SIZE));
 
         }
+        else if(strncmp(ADD, instr, OPCODE_SIZE) == 0){ //MEM[$s + offset] = $t = sw $t, offset($s)
+
+            strncpy(rd, instr + OPCODE_SIZE, 10);
+            strncpy(rs, instr + OPCODE_SIZE+10, 8);
+            strncpy(rt, instr + OPCODE_SIZE +10+8, 8);
+       
+       //NEED TO CHECK BELOW INSTRUCTION     
+	   // strcpy(rd, ALU(1, rs, rt, 16, 0));
+	}
         strcpy(PC, ALU(0, PC, "1", 16, 0)); //move to next instruction
         printExecutionData(i);
     }

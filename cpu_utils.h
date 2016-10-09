@@ -52,6 +52,7 @@ void runProgram(EXEC_INFO info);
 
 char *ALU(int op, char *opLeft, char *opRight, int size, int setFlags);
 char *addBinary (char *opLeft, char *opRight, int size, int setFlags);
+char *subBinary (char *opLeft, char *opRight, int size, int setFlags);
 char *signExtend(char *value, int size);
 char *convertInstrToBin(char *instr);
 
@@ -61,6 +62,7 @@ char *genLDSTbinInstr(char **tokens, int params);
 
 //char *convertToBin(int toConvert, bool isImmVal);
 char *decimalToBinary(int toConvert, int numOfBits);
+char *decimalToComplementBinary(int toConvert, int numOfBits);
 int binaryToDecimal(char *binary, int size);
 
 void printExecutionData(int instrNum);
