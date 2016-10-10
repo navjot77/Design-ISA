@@ -50,7 +50,7 @@ void loadAndStoreInstrs(char *fileName, EXEC_INFO *info){
         memLoc++;
         free(freeHandle);
     }
-
+    free(fileName);
     info->lines = memLoc - TEXT_SEGMENT;
 }
 

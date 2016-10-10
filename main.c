@@ -56,15 +56,15 @@ int main(int argc, char **argv)
 
 //will get the file name from arg
 char *checkAndGetArg(int argc, char **arg){
-    char *file = "D:\\CMPE220\\source.txt";
-/*
+    char *file;
+
     if(argc > 2) {
         printf("Incorrect number of arguments. File is required\n");
         exit;
-    }*/
+    }
 
-/*    file = (char *)malloc(sizeof(char) * strlen(arg[1]) + 1);
-    strcpy(file, "D:\\CMPE220\\source.txt");*/
+    file = (char *)malloc(sizeof(char) * strlen(arg[1]) + 1);
+    strcpy(file, arg[1]);
     return file;
 }
 
