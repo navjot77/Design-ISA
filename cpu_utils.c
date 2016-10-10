@@ -243,7 +243,7 @@ char *genLWSWbinInstr(char **tokens) {
  * @param opLeft : left hand operand
  * @param opRight : right hand operand
  * @param size : number of bits
- * @param setFlags : should be 0 if we do not want it to modify flags
+ * @param setFlags : should be 0 if we do not want it to modify flags. 2 if the instruction is subtraction
  * @return return the evaluated expression
  */
 char *ALU(int op, char *opLeft, char *opRight, int size, int setFlags) {
@@ -290,7 +290,7 @@ char *subBinary(char *opLeft, char *opRight, int size, int setFlags){
     right = decimalToComplementBinary(binaryToDecimal(opRight, size), size);
 
     // Adding 1 to the complement of operand
-    right = addBinary(decimalToBinary(1, size), right, size, setFlags);
+    right = addBinary(decimalToBinary(1, size), right, size, 0);
     
     return addBinary(opLeft, right, size, setFlags);
 }
@@ -319,7 +319,7 @@ char *addBinary (char *opLeft, char *opRight, int size, int setFlags){
     }
     //don't want to set flags for PC increment
     if(setFlags) {
-        if (carry == '1') {
+        if (carry == '1' && setFlags != 2) {
             flags[OVERFLOW_FLAG] = '1';
             printf("OVERFLOW ON INSTRUCTION\n");
         }else flags[OVERFLOW_FLAG] = '0';
@@ -653,7 +653,7 @@ void runProgram(EXEC_INFO info){
             strncpy(rs, instr + rsOffset, RTYPE_ADDR_SIZE);
             strncpy(rt, instr + rtOffset, RTYPE_ADDR_SIZE);
 
-            result = ALU(SUB_OP, regFile[binaryToDecimal(rs, RTYPE_ADDR_SIZE)], regFile[binaryToDecimal(rt, RTYPE_ADDR_SIZE)], WORD_SIZE, 1); //execute instruction
+            result = ALU(SUB_OP, regFile[binaryToDecimal(rs, RTYPE_ADDR_SIZE)], regFile[binaryToDecimal(rt, RTYPE_ADDR_SIZE)], WORD_SIZE, 2); //execute instruction
             strcpy(regFile[binaryToDecimal(rd, RTYPE_RD_SIZE)], result);
 
         }else if((strncmp(ADD, instr, OPCODE_SIZE) == 0)) { //ADD INSTRUCTION
