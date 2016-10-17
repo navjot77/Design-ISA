@@ -104,7 +104,7 @@ char *convertInstrToBin(char *instr) {
         strcpy(binInstr + OPCODE_SIZE, freeHandle = genLWSWbinInstr(tokens));
     } else if (strcmp(tokens[0], "sw") == 0) {
         strcpy(binInstr, SW);
-        strcpy(binInstr + OPCODE_SIZE, freeHandle =genLWSWbinInstr(tokens));
+        strcpy(binInstr + OPCODE_SIZE, freeHandle = genLWSWbinInstr(tokens));
     } else if (strcmp(tokens[0], "ld") == 0) {
         strcpy(binInstr, LD);
         strcpy(binInstr + OPCODE_SIZE, freeHandle = genLDSTbinInstr(tokens));
@@ -126,6 +126,9 @@ char *convertInstrToBin(char *instr) {
     } else if(strcmp(tokens[0], "mod") == 0){
         strcpy(binInstr, MOD);
         strcpy(binInstr + OPCODE_SIZE, freeHandle = genRTypeInstr(tokens));
+    } else if(strcmp(tokens[0], "addi") == 0) {
+        strcpy(binInstr, ADDI);
+        strcpy(binInstr + OPCODE_SIZE, freeHandle = genITypeInstr(tokens));
     }
 
     binInstr[WORD_SIZE] = '\0';
@@ -134,6 +137,28 @@ char *convertInstrToBin(char *instr) {
         free(tokens[i]);
     free(freeHandle);
     free(temp);
+    return binInstr;
+}
+
+char *genITypeInstr(char **tokens){
+    char *binInstr  = (char *)malloc((WORD_SIZE - OPCODE_SIZE) * sizeof(char) + 1);
+    mallocErrorCheck(binInstr);
+
+    char *dest = NULL, *src = NULL, *imm = NULL;
+
+    dest = decimalToBinary(atoi(tokens[1] + 1), REG_ADDR_SIZE);
+    src = decimalToBinary(atoi(tokens[2] + 1), REG_ADDR_SIZE);
+    imm = decimalToBinary(atoi(tokens[3]), IMM_SIZE);
+
+    strcpy(binInstr, dest);
+    strcat(binInstr, src);
+    strcat(binInstr, imm);
+
+    free(dest);
+    free(src);
+    free(imm);
+
+    binInstr[WORD_SIZE - OPCODE_SIZE] = '\0';
     return binInstr;
 }
 
@@ -268,12 +293,19 @@ char *ALU(int op, char *opLeft, char *opRight, int size, int setFlags) {
         case MUL_OP:
 	        result = mulBinary(left, right, size, setFlags);
             break;
+        case ADDI_OP:
+            result = addImmBinary(left, right, size, setFlags);
+            break;
         default:
             printf("Error. No matching operation.\n");
             break;
     }
 
     return result;
+}
+
+char *addImmBinary(char *opLeft, char *opRight, int size, int setFlags){
+    return addBinary(opLeft, opRight, size, setFlags);
 }
 
 /**
@@ -699,6 +731,13 @@ void runProgram(EXEC_INFO info){
 
             result = ALU(DIV_OP, regFile[binaryToDecimal(rs, RTYPE_ADDR_SIZE)], regFile[binaryToDecimal(rt, RTYPE_ADDR_SIZE)], WORD_SIZE, 1);
             strcpy(regFile[binaryToDecimal(rd, RTYPE_RD_SIZE)], result);
+        }else if(strncmp(ADDI, instr, OPCODE_SIZE) == 0) {
+            strncpy(rd, instr + OPCODE_SIZE, REG_ADDR_SIZE);
+            strncpy(rs, instr + OPCODE_SIZE + REG_ADDR_SIZE, REG_ADDR_SIZE);
+            strncpy(imm, instr + OPCODE_SIZE + REG_ADDR_SIZE + REG_ADDR_SIZE, IMM_SIZE);
+
+            result = ALU(ADDI_OP, regFile[binaryToDecimal(rs, REG_ADDR_SIZE)], imm, WORD_SIZE, 1);
+            strcpy(regFile[binaryToDecimal(rd, REG_ADDR_SIZE)], result);
         }
 
         strcpy(PC, freeHandle = ALU(ADD_OP, PC, "1", PC_SIZE, 0)); //move to next instruction
@@ -867,6 +906,9 @@ void printExecutionData(int instrNum){
     }else if(strncmp(DIV, instrFromMem, OPCODE_SIZE) == 0) {
         strcpy(instrBuilder, freeHandle = buildInstrForRTypePrint(instrFromMem, "DIV"));
         free(freeHandle);
+    }else if(strncmp(ADDI, instrFromMem, OPCODE_SIZE) == 0) {
+        strcpy(instrBuilder, freeHandle = buildInstrForITypePrint(instrFromMem, "ADDI"));
+        free(freeHandle);
     }
 
     printf("%-30s %-40s %-30s\n", "Instruction", "Binary representation", "Program Counter");
@@ -898,6 +940,26 @@ char *buildInstrForRTypePrint(char *instr, char *instrName){
     strncpy(rt, instr + OPCODE_SIZE + 10 + 8, 8);
 
     sprintf(instrBuilder, "%s $%d, $%d, $%d", instrName, binaryToDecimal(rd, 10), binaryToDecimal(rs, 8), binaryToDecimal(rt, 8));
+    char *rebuiltInstr = malloc(strlen(instrBuilder) + 1);
+    mallocErrorCheck(rebuiltInstr);
+    strcpy(rebuiltInstr, instrBuilder);
+
+    return rebuiltInstr;
+}
+
+char *buildInstrForITypePrint(char *instr, char *instrName){
+    char rd[REG_ADDR_SIZE +1], rs[REG_ADDR_SIZE + 1], imm[IMM_SIZE + 1];
+    char instrBuilder[250];
+
+    rd[REG_ADDR_SIZE] = '\0';
+    rs[REG_ADDR_SIZE] = '\0';
+    imm[IMM_SIZE] = '\0';
+
+    strncpy(rd, instr + OPCODE_SIZE, REG_ADDR_SIZE);
+    strncpy(rs, instr + OPCODE_SIZE + REG_ADDR_SIZE, REG_ADDR_SIZE);
+    strncpy(imm, instr + OPCODE_SIZE + REG_ADDR_SIZE + REG_ADDR_SIZE, IMM_SIZE);
+
+    sprintf(instrBuilder, "%s $%d, $%d, %d", instrName, binaryToDecimal(rd, REG_ADDR_SIZE), binaryToDecimal(rs, REG_ADDR_SIZE), binaryToDecimal(imm, IMM_SIZE));
     char *rebuiltInstr = malloc(strlen(instrBuilder) + 1);
     mallocErrorCheck(rebuiltInstr);
     strcpy(rebuiltInstr, instrBuilder);

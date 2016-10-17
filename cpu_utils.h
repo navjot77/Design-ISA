@@ -46,6 +46,7 @@
 #define DIV_OP 2
 #define MOD_OP 3
 #define MUL_OP 4
+#define ADDI_OP 5
 
 //WORD_SIZE + 1 for /0 for debugging and printing
 extern char *memory[MEM_ROWS]; //64kb mem
@@ -70,6 +71,13 @@ char *mulBinary(char* left, char* right, int size, int setFlags);
 char *modBinary(char *left, char *right, int size, int setFlags);
 char *divBinary(char *left, char *right, char **remainder, int size, int setFlags);
 
+//todo implement addi
+char *addImmBinary(char *opLeft, char *opRight, int size, int setFlags);
+
+//todo implement jr, jal, j
+//todo implement beq
+//todo implement sra
+
 char *leftShift(char* input, int size);
 char *rightShift(char* input, int size);
 char *signExtend(char *value, int size);
@@ -79,6 +87,7 @@ char *convertInstrToBin(char *instr);
 char *genLWSWbinInstr(char **tokens);
 char *genLDSTbinInstr(char **tokens);
 char *genRTypeInstr(char **tokens);
+char *genITypeInstr(char **tokens);
 
 //conversion functions
 char *decimalToBinary(int toConvert, int numOfBits);
@@ -88,5 +97,6 @@ int binaryToDecimal(char *binary, int size);
 void printExecutionData(int instrNum);
 void mallocErrorCheck(char *ptr);
 char *buildInstrForRTypePrint(char *instr, char *instrName);
+char *buildInstrForITypePrint(char *instr, char *instrName);
 
 #endif //DESIGN_ISA_CPU_UTILS_H

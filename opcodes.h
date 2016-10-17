@@ -10,6 +10,7 @@ const char *LW = "100011";
 const char *SW = "101011";
 const char *LD = "100010";
 const char *ST = "100100";
+const char *ADDI = "100101";
 
 //R Types and functions
 const char *ADD = "000001";
