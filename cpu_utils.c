@@ -304,6 +304,14 @@ char *ALU(int op, char *opLeft, char *opRight, int size, int setFlags) {
     return result;
 }
 
+/**
+ * Adds immediate value with a value from a register
+ * @param opLeft
+ * @param opRight
+ * @param size
+ * @param setFlags
+ * @return
+ */
 char *addImmBinary(char *opLeft, char *opRight, int size, int setFlags){
     return addBinary(opLeft, opRight, size, setFlags);
 }

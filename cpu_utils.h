@@ -70,13 +70,18 @@ char *subBinary (char *opLeft, char *opRight, int size, int setFlags);
 char *mulBinary(char* left, char* right, int size, int setFlags);
 char *modBinary(char *left, char *right, int size, int setFlags);
 char *divBinary(char *left, char *right, char **remainder, int size, int setFlags);
-
-//todo implement addi
 char *addImmBinary(char *opLeft, char *opRight, int size, int setFlags);
 
-//todo implement jr, jal, j
-//todo implement beq
-//todo implement sra
+//todo add JAL
+//todo add J
+//todo add B
+//todo add BNE
+//todo add BEQ
+//todo add BLT
+//todo add SRA
+//todo add SLL
+//todo add MOVE
+//todo add LEA
 
 char *leftShift(char* input, int size);
 char *rightShift(char* input, int size);
