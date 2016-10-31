@@ -76,7 +76,6 @@ char *divBinary(char *left, char *right, char **remainder, int size, int setFlag
 char *addImmBinary(char *opLeft, char *opRight, int size, int setFlags);
 
 //todo add JAL
-//todo add J
 //todo add B
 //todo add BNE
 //todo add BEQ
@@ -97,7 +96,7 @@ char *genLDSTbinInstr(char **tokens);
 char *genRTypeInstr(char **tokens);
 char *genITypeInstr(char **tokens);
 char *genJTypeInstr(char **tokens, int currMemLoc);
-char *genBranchTypeInstr(char **tokens);
+char *genBranchTypeInstr(char **tokens, int currMemLoc);
 
 //conversion functions
 char *decimalToBinary(int toConvert, int numOfBits);

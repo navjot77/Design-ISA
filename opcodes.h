@@ -12,6 +12,8 @@ const char *LD = "100010";
 const char *ST = "100100";
 const char *ADDI = "100101";
 
+const char *BLT = "100110";
+
 //R Types and functions
 const char *ADD = "000001";
 const char *SUB = "000010";
