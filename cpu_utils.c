@@ -196,6 +196,7 @@ char *genJTypeInstr(char **tokens, int currMemLoc) {
                 addr = labels[i].lineNum + (currMemLoc - TEXT_SEGMENT);
             }
             labels[i].offset = addr;
+            printf("FOFSET IS %d\n", labels[i].offset);
             freeHandle = decimalToBinary(addr, JTA_SIZE);
             strcpy(jumpTargetAddr, freeHandle);
             free(freeHandle);
@@ -616,11 +617,13 @@ void runProgram(EXEC_INFO info){
     strcpy(PC, freeHandle = decimalToBinary(TEXT_SEGMENT, PC_SIZE));
     free(freeHandle);
 
-    int memLoc = 0, rdOffset = 0, rsOffset = 0, rtOffset = 0, immOffset = 0;
+    int memLoc = 0, rdOffset = 0, rsOffset = 0, rtOffset = 0, immOffset = 0, addr = 0;
     char *result;
 
     for(int i = 0; i < info.lines; i++){
         result = NULL;
+        jumpOrBra = false;
+        addr = 0;
         //clear out memAddr and memData for instructions not using memory
         strcpy(memAddr, "00000000000000000000000000000000");
         strcpy(memData, "00000000000000000000000000000000");
@@ -815,19 +818,23 @@ void runProgram(EXEC_INFO info){
         }else if(strncmp(J, instr, OPCODE_SIZE) == 0) {
             //load address to jump to here
             jumpOrBra = true;
-            int addr = binaryToDecimal(instr + OPCODE_SIZE, JTA_SIZE);
+            addr = binaryToDecimal(instr + OPCODE_SIZE, JTA_SIZE)+1;
+            printf("offest is %d %s\n", addr, memory[addr]);
+            //i += addr;
             int currPC = binaryToDecimal(PC, PC_SIZE) + addr;
             strcpy(PC, freeHandle = decimalToBinary(currPC, PC_SIZE)); //move to next instruction
             free(freeHandle);
         }
 
+        printf("i is %d\n", i);
+        if(strcmp(instr, "00000000000000000000000000000000") != 0)
+            printExecutionData(i);
+
         if(jumpOrBra == false) {
             strcpy(PC, freeHandle = ALU(ADD_OP, PC, "1", PC_SIZE, 0)); //move to next instruction
             free(freeHandle);
-        }
+        }else i += addr - 1;
 
-        if(strcmp(instr, "00000000000000000000000000000000") != 0)
-            printExecutionData(i);
         if(result != NULL)
             free(result);
     }
@@ -996,9 +1003,12 @@ void printExecutionData(int instrNum){
         free(freeHandle);
     }else if(strncmp(J, instrFromMem, OPCODE_SIZE) == 0) {
         strcpy(instrBuilder, "J ");
+        printf("instr from mem %s\n", instrFromMem);
         for(int i = 0; i < 5; i++){
+            printf("label name %s and offset %d\n",labels[i].labelName, labels[i].offset);
             if((labels[i].labelName != NULL) && (labels[i].offset == binaryToDecimal(instrFromMem + OPCODE_SIZE, JTA_SIZE))) {
                 strcat(instrBuilder, labels[i].labelName);
+                printf("label name %s\n", labels[i].labelName);
                 break;
             }
         }
