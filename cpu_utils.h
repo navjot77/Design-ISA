@@ -17,6 +17,7 @@
 #define DIST_SIZE 7
 #define SCALE_SIZE 4
 #define RTYPE_RD_SIZE 10
+#define JTA_SIZE 26
 
 //memory start addresses
 #define TEXT_SEGMENT 512    //where text segment begins
@@ -58,6 +59,8 @@ extern char memData[WORD_SIZE + 1];
 extern char instrReg[WORD_SIZE + 1];
 extern char flags[WORD_SIZE + 1];
 
+extern LABEL_INFO labels[5];
+
 //execution functions
 EXEC_INFO initCPU();
 void loadAndStoreInstrs(char *fileName, EXEC_INFO *info);
@@ -86,13 +89,15 @@ char *addImmBinary(char *opLeft, char *opRight, int size, int setFlags);
 char *leftShift(char* input, int size);
 char *rightShift(char* input, int size);
 char *signExtend(char *value, int size);
-char *convertInstrToBin(char *instr);
+char *convertInstrToBin(char *instr, int currMemLoc);
 
-//functions for decoding instructions
+//functions for encoding instructions
 char *genLWSWbinInstr(char **tokens);
 char *genLDSTbinInstr(char **tokens);
 char *genRTypeInstr(char **tokens);
 char *genITypeInstr(char **tokens);
+char *genJTypeInstr(char **tokens, int currMemLoc);
+char *genBranchTypeInstr(char **tokens);
 
 //conversion functions
 char *decimalToBinary(int toConvert, int numOfBits);
@@ -103,5 +108,6 @@ void printExecutionData(int instrNum);
 void mallocErrorCheck(char *ptr);
 char *buildInstrForRTypePrint(char *instr, char *instrName);
 char *buildInstrForITypePrint(char *instr, char *instrName);
+void preprocessFile(FILE *fp);
 
 #endif //DESIGN_ISA_CPU_UTILS_H

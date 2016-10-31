@@ -20,5 +20,6 @@ const char *DIV = "000100";
 const char *MOD = "000101";
 
 //J Types
+const char *J = "010000";
 
 #endif //DESIGN_ISA_OPCODES_H

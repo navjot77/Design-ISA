@@ -12,6 +12,33 @@
 
 #define MAX_TOKENS 10
 
+void preprocessFile(FILE *fp) {
+    if(fp == NULL) exit(1); //error
+
+    char buff[250];
+    char *label, *labelName;
+    int relativeAddr = 0;
+
+    while(fgets(buff, 250, fp)){
+        label = strchr(buff, ':');
+        if(label){
+            *label = '\0';
+            labelName = malloc(strlen(buff) + 1);
+            mallocErrorCheck(labelName);
+            strcpy(labelName, buff);
+
+            int i = 0;
+            while(labels[i]. labelName != NULL)
+                i++;
+
+            labels[i].labelName = labelName;
+            labels[i].lineNum = relativeAddr;
+
+        }
+        relativeAddr++;
+    }
+}
+
 /**
  * Inits the CPU with bootup values
  * @return returns a struct containing information about start up addresses etc
@@ -43,13 +70,19 @@ void loadAndStoreInstrs(char *fileName, EXEC_INFO *info){
         exit;
     }
 
+    preprocessFile(fp);
     char *freeHandle;
 
+    rewind(fp);
     while(fgets(buff, 250, fp)) {
-        strcpy(memory[memLoc], freeHandle = convertInstrToBin(buff));
+
+        if(!strchr(buff, ':')) {
+            strcpy(memory[memLoc], freeHandle = convertInstrToBin(buff, memLoc));
+            free(freeHandle);
+        }
         memLoc++;
-        free(freeHandle);
     }
+
     free(fileName);
     info->lines = memLoc - TEXT_SEGMENT;
 }
@@ -59,7 +92,7 @@ void loadAndStoreInstrs(char *fileName, EXEC_INFO *info){
  * @param instr : instruction from file to encode
  * @return :
  */
-char *convertInstrToBin(char *instr) {
+char *convertInstrToBin(char *instr, int currMemLoc) {
     char *tokens[MAX_TOKENS];
     char *token = NULL, *freeHandle = NULL;
     char *binInstr = (char *) malloc(sizeof(char) * WORD_SIZE + 1);
@@ -77,9 +110,9 @@ char *convertInstrToBin(char *instr) {
 
     //get opcode
     token = strtok(temp, " ");
-    if(token == NULL){
+    if (token == NULL) {
         printf("Error. Expected token\n");
-    }else{
+    } else {
         //change instruction name to lowercase
         for (int i = 0; i < strlen(token); i++)
             token[i] = (char) tolower(token[i]);
@@ -99,6 +132,8 @@ char *convertInstrToBin(char *instr) {
         params++;
     }
 
+//    printf("token %s\n", tokens[0]);
+
     if (strcmp(tokens[0], "lw") == 0) {
         strcpy(binInstr, LW);
         strcpy(binInstr + OPCODE_SIZE, freeHandle = genLWSWbinInstr(tokens));
@@ -108,36 +143,66 @@ char *convertInstrToBin(char *instr) {
     } else if (strcmp(tokens[0], "ld") == 0) {
         strcpy(binInstr, LD);
         strcpy(binInstr + OPCODE_SIZE, freeHandle = genLDSTbinInstr(tokens));
-    }else if (strcmp(tokens[0], "st") == 0){
+    } else if (strcmp(tokens[0], "st") == 0) {
         strcpy(binInstr, ST);
         strcpy(binInstr + OPCODE_SIZE, freeHandle = genLDSTbinInstr(tokens));
-    }else if(strcmp(tokens[0], "sub") == 0){
+    } else if (strcmp(tokens[0], "sub") == 0) {
         strcpy(binInstr, SUB);
         strcpy(binInstr + OPCODE_SIZE, freeHandle = genRTypeInstr(tokens));
-    }else if(strcmp(tokens[0], "add") == 0) {
+    } else if (strcmp(tokens[0], "add") == 0) {
         strcpy(binInstr, ADD);
         strcpy(binInstr + OPCODE_SIZE, freeHandle = genRTypeInstr(tokens));
-    } else if(strcmp(tokens[0], "mul") == 0){
+    } else if (strcmp(tokens[0], "mul") == 0) {
         strcpy(binInstr, MUL);
         strcpy(binInstr + OPCODE_SIZE, freeHandle = genRTypeInstr(tokens));
-    } else if(strcmp(tokens[0], "div") == 0){
+    } else if (strcmp(tokens[0], "div") == 0) {
         strcpy(binInstr, DIV);
         strcpy(binInstr + OPCODE_SIZE, freeHandle = genRTypeInstr(tokens));
-    } else if(strcmp(tokens[0], "mod") == 0){
+    } else if (strcmp(tokens[0], "mod") == 0) {
         strcpy(binInstr, MOD);
         strcpy(binInstr + OPCODE_SIZE, freeHandle = genRTypeInstr(tokens));
-    } else if(strcmp(tokens[0], "addi") == 0) {
+    } else if (strcmp(tokens[0], "addi") == 0) {
         strcpy(binInstr, ADDI);
         strcpy(binInstr + OPCODE_SIZE, freeHandle = genITypeInstr(tokens));
+    } else if (strcmp(tokens[0], "j") == 0) {
+        strcpy(binInstr, J);
+        strcpy(binInstr + OPCODE_SIZE, freeHandle = genJTypeInstr(tokens, currMemLoc));
+        printf("%s\n", binInstr);
     }
 
     binInstr[WORD_SIZE] = '\0';
 
-    for(int i = 0; i < params + 1; i++)
+    for (int i = 0; i < params + 1; i++)
         free(tokens[i]);
+
     free(freeHandle);
-    free(temp);
     return binInstr;
+}
+
+char *genJTypeInstr(char **tokens, int currMemLoc) {
+    char *jumpTargetAddr  = (char *)malloc((WORD_SIZE - OPCODE_SIZE) * sizeof(char) + 1);
+    mallocErrorCheck(jumpTargetAddr);
+
+    char *freeHandle = NULL;
+
+
+    for(int i = 0; i < 5; i++){
+        if(strcmp(labels[i].labelName, tokens[1]) == 0){
+
+            int addr;
+            if(labels[i].lineNum < currMemLoc) {
+                addr = labels[i].lineNum - (currMemLoc - TEXT_SEGMENT);
+            }else {
+                addr = labels[i].lineNum + (currMemLoc - TEXT_SEGMENT);
+            }
+            labels[i].offset = addr;
+            freeHandle = decimalToBinary(addr, JTA_SIZE);
+            strcpy(jumpTargetAddr, freeHandle);
+            free(freeHandle);
+            break;
+        }
+    }
+    return jumpTargetAddr;
 }
 
 char *genITypeInstr(char **tokens){
@@ -546,6 +611,7 @@ void runProgram(EXEC_INFO info){
     rt[REG_ADDR_SIZE] = '\0';
 
     char *freeHandle = NULL;
+    bool jumpOrBra = false;
 
     strcpy(PC, freeHandle = decimalToBinary(TEXT_SEGMENT, PC_SIZE));
     free(freeHandle);
@@ -746,11 +812,22 @@ void runProgram(EXEC_INFO info){
 
             result = ALU(ADDI_OP, regFile[binaryToDecimal(rs, REG_ADDR_SIZE)], imm, WORD_SIZE, 1);
             strcpy(regFile[binaryToDecimal(rd, REG_ADDR_SIZE)], result);
+        }else if(strncmp(J, instr, OPCODE_SIZE) == 0) {
+            //load address to jump to here
+            jumpOrBra = true;
+            int addr = binaryToDecimal(instr + OPCODE_SIZE, JTA_SIZE);
+            int currPC = binaryToDecimal(PC, PC_SIZE) + addr;
+            strcpy(PC, freeHandle = decimalToBinary(currPC, PC_SIZE)); //move to next instruction
+            free(freeHandle);
         }
 
-        strcpy(PC, freeHandle = ALU(ADD_OP, PC, "1", PC_SIZE, 0)); //move to next instruction
-        free(freeHandle);
-        printExecutionData(i);
+        if(jumpOrBra == false) {
+            strcpy(PC, freeHandle = ALU(ADD_OP, PC, "1", PC_SIZE, 0)); //move to next instruction
+            free(freeHandle);
+        }
+
+        if(strcmp(instr, "00000000000000000000000000000000") != 0)
+            printExecutionData(i);
         if(result != NULL)
             free(result);
     }
@@ -917,6 +994,14 @@ void printExecutionData(int instrNum){
     }else if(strncmp(ADDI, instrFromMem, OPCODE_SIZE) == 0) {
         strcpy(instrBuilder, freeHandle = buildInstrForITypePrint(instrFromMem, "ADDI"));
         free(freeHandle);
+    }else if(strncmp(J, instrFromMem, OPCODE_SIZE) == 0) {
+        strcpy(instrBuilder, "J ");
+        for(int i = 0; i < 5; i++){
+            if((labels[i].labelName != NULL) && (labels[i].offset == binaryToDecimal(instrFromMem + OPCODE_SIZE, JTA_SIZE))) {
+                strcat(instrBuilder, labels[i].labelName);
+                break;
+            }
+        }
     }
 
     printf("%-30s %-40s %-30s\n", "Instruction", "Binary representation", "Program Counter");

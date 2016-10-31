@@ -19,6 +19,8 @@ char flags[WORD_SIZE + 1];
 char *memory[MEM_ROWS]; //64kb mem
 char *regFile[NUM_REG];
 
+LABEL_INFO labels[5];
+
 int main(int argc, char **argv)
 {
     char *sourceCode;
@@ -95,6 +97,10 @@ void init() {
             regFile[row][col] = '0';
         }
         regFile[row][WORD_SIZE] = '\0';
+    }
+
+    for(int i = 0; i < 5; i++){
+        labels[i].labelName = NULL;
     }
 }
 
