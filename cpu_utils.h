@@ -6,10 +6,9 @@
 #ifndef DESIGN_ISA_CPU_UTILS_H
 #define DESIGN_ISA_CPU_UTILS_H
 
-#include <stdbool.h>
+//instruction breakdown
 #include "exec_utils.h"
 
-//instruction breakdown
 #define OPCODE_SIZE 6
 #define REG_ADDR_SIZE 5
 #define RTYPE_ADDR_SIZE 8
@@ -97,17 +96,5 @@ char *genRTypeInstr(char **tokens);
 char *genITypeInstr(char **tokens);
 char *genJTypeInstr(char **tokens, int currMemLoc);
 char *genBranchTypeInstr(char **tokens, int currMemLoc);
-
-//conversion functions
-char *decimalToBinary(int toConvert, int numOfBits);
-char *decimalToComplementBinary(int toConvert, int numOfBits);
-int binaryToDecimal(char *binary, int size);
-int signedBinaryToDecimal(char *binary, int size);
-
-void printExecutionData(int instrNum);
-void mallocErrorCheck(char *ptr);
-char *buildInstrForRTypePrint(char *instr, char *instrName);
-char *buildInstrForITypePrint(char *instr, char *instrName);
-void preprocessFile(FILE *fp);
 
 #endif //DESIGN_ISA_CPU_UTILS_H
