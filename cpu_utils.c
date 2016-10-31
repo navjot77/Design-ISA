@@ -169,7 +169,6 @@ char *convertInstrToBin(char *instr, int currMemLoc) {
         printf("%s\n", binInstr);
     } else if (strcmp(tokens[0], "blt") == 0) {
         strcpy(binInstr, BLT);
-        printf("blt\n");
         strcpy(binInstr + OPCODE_SIZE, freeHandle = genBranchTypeInstr(tokens, currMemLoc));
     }
 
@@ -200,7 +199,7 @@ char *genBranchTypeInstr(char **tokens, int currMemLoc) {
                 addr = labels[i].lineNum + (currMemLoc - TEXT_SEGMENT);
             }
             labels[i].offset = addr;
-            printf("offset is %d\n", addr);
+            printf("offset %d\n", addr);
             targetAddr = decimalToBinary(addr, IMM_SIZE);
             break;
         }
@@ -869,8 +868,10 @@ void runProgram(EXEC_INFO info){
             int leftVal = binaryToDecimal(regFile[leftReg], WORD_SIZE);
             int rightVal = binaryToDecimal(regFile[rightReg], WORD_SIZE);
 
+            printf("found branch instr\n");
             if(leftVal < rightVal) {
-                addr = binaryToDecimal(instr + OPCODE_SIZE + REG_ADDR_SIZE + REG_ADDR_SIZE , IMM_SIZE)+1;
+                printf("branch taken\n");
+                addr = signedBinaryToDecimal(instr + OPCODE_SIZE + REG_ADDR_SIZE + REG_ADDR_SIZE , IMM_SIZE)+1;
                 int currPC = binaryToDecimal(PC, PC_SIZE) + addr;
                 strcpy(PC, freeHandle = decimalToBinary(currPC, PC_SIZE)); //move to next instruction
                 free(freeHandle);
@@ -879,7 +880,6 @@ void runProgram(EXEC_INFO info){
             }
         }
 
-        printf("i is %d\n", i);
         if(strcmp(instr, "00000000000000000000000000000000") != 0)
             printExecutionData(i);
 
@@ -945,6 +945,32 @@ int binaryToDecimal(char *binary, int size) {
             num += pow(2, size - 1 - i);
     }
     return num;
+}
+
+int signedBinaryToDecimal(char *binary, int size) {
+    int result = 0;
+    char *convertedVal = malloc(sizeof(char) * size + 1);
+    mallocErrorCheck(convertedVal);
+    strcpy(convertedVal, binary);
+    
+    bool isNeg = false;
+
+    if(convertedVal[size - 2] == '1'){
+        for(int i = size - 1; i >= 0; i--){
+            if(convertedVal[i] == '1'){
+                convertedVal[i] = '0';
+            }else convertedVal[i] = '1';
+        }
+        convertedVal = ALU(ADD_OP, convertedVal, "1", size, 0);
+        isNeg = true;
+    }
+
+    result = binaryToDecimal(convertedVal, size);
+    free(convertedVal);
+
+    if(isNeg)
+        result = result * -1;
+    return result;
 }
 
 /**
@@ -1075,16 +1101,14 @@ void printExecutionData(int instrNum){
         printf("instr from mem %s\n", instrFromMem);
 
         for(int i = 0; i < 5; i++){
-            printf("label name %s and offset %d\n",labels[i].labelName, labels[i].offset);
-            if((labels[i].labelName != NULL) && (labels[i].offset == binaryToDecimal(instrFromMem + OPCODE_SIZE + REG_ADDR_SIZE + REG_ADDR_SIZE, IMM_SIZE))) {
+            if((labels[i].labelName != NULL) && (labels[i].offset == signedBinaryToDecimal(instrFromMem + OPCODE_SIZE + REG_ADDR_SIZE + REG_ADDR_SIZE, IMM_SIZE))) {
                 strcpy(label, labels[i].labelName);
-                printf("label name %s\n", labels[i].labelName);
+                printf("label %s\n", label);
                 break;
             }
         }
 
         sprintf(instrBuilder, "%s $%d, $%d, %s", "BLT", binaryToDecimal(left, REG_ADDR_SIZE), binaryToDecimal(right, REG_ADDR_SIZE), label);
-
     }
 
     printf("%-30s %-40s %-30s\n", "Instruction", "Binary representation", "Program Counter");

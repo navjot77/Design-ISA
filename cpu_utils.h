@@ -102,6 +102,7 @@ char *genBranchTypeInstr(char **tokens, int currMemLoc);
 char *decimalToBinary(int toConvert, int numOfBits);
 char *decimalToComplementBinary(int toConvert, int numOfBits);
 int binaryToDecimal(char *binary, int size);
+int signedBinaryToDecimal(char *binary, int size);
 
 void printExecutionData(int instrNum);
 void mallocErrorCheck(char *ptr);
