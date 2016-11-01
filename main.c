@@ -23,6 +23,7 @@ LABEL_INFO labels[5];
 
 int main(int argc, char **argv)
 {
+
     char *sourceCode;
 
     //must malloc separately since we can't alloc more than 64kb in one go
@@ -60,14 +61,16 @@ int main(int argc, char **argv)
 char *checkAndGetArg(int argc, char **arg){
     char *file;
 
-    if(argc > 2) {
+    if(argc != 2) {
         printf("Incorrect number of arguments. File is required\n");
-        exit;
+        exit ;
     }
 
     file = (char *)malloc(sizeof(char) * strlen(arg[1]) + 1);
     strcpy(file, arg[1]);
+
     return file;
+
 }
 
 void init() {

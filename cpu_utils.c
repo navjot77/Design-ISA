@@ -59,6 +59,7 @@ EXEC_INFO initCPU() {
  * @param info : struct containing information for execution
  */
 void loadAndStoreInstrs(char *fileName, EXEC_INFO *info){
+    printf("**************");
     FILE *fp = NULL;
     char buff[250];
     int memLoc = TEXT_SEGMENT;
@@ -84,6 +85,7 @@ void loadAndStoreInstrs(char *fileName, EXEC_INFO *info){
 
     free(fileName);
     info->lines = memLoc - TEXT_SEGMENT;
+
 }
 
 /**
@@ -92,6 +94,7 @@ void loadAndStoreInstrs(char *fileName, EXEC_INFO *info){
  * @return :
  */
 char *convertInstrToBin(char *instr, int currMemLoc) {
+    printf("---------------0");
     char *tokens[MAX_TOKENS];
     char *token = NULL, *freeHandle = NULL;
     char *binInstr = (char *) malloc(sizeof(char) * WORD_SIZE + 1);
@@ -178,10 +181,10 @@ char *convertInstrToBin(char *instr, int currMemLoc) {
         strcpy(binInstr + OPCODE_SIZE, freeHandle = genBranchTypeInstr(tokens, currMemLoc));
     }else if (strcmp(tokens[0], "mov") == 0) {
         strcpy(binInstr, MOV);
-        strcpy(binInstr + OPCODE_SIZE, freeHandle = genMovTypeInstr(tokens, currMemLoc));
+        strcpy(binInstr + OPCODE_SIZE, freeHandle = genMovTypeInstr(tokens));
     }else if (strcmp(tokens[0], "lea") == 0) {
         strcpy(binInstr, LEA);
-        strcpy(binInstr + OPCODE_SIZE, freeHandle = genLEATypeInstr(tokens, currMemLoc));
+        strcpy(binInstr + OPCODE_SIZE, freeHandle = genLEATypeInstr(tokens));
     }
 
     binInstr[WORD_SIZE] = '\0';
@@ -190,15 +193,17 @@ char *convertInstrToBin(char *instr, int currMemLoc) {
         free(tokens[i]);
 
     free(freeHandle);
+
     return binInstr;
 }
 
 // Opcode 6 bits, followed by Destination register 5 bits and Source Reg.
 char *genMovTypeInstr(char **tokens){
+
     char *binInstr  = (char *)malloc((WORD_SIZE - OPCODE_SIZE) * sizeof(char) + 1);
     mallocErrorCheck(binInstr);
 
-    char *dest = NULL, *src = NULL, *imm = NULL;
+    char *dest = NULL, *src = NULL;
 
     dest = decimalToBinary(atoi(tokens[1] + 1), REG_ADDR_SIZE);
     src = decimalToBinary(atoi(tokens[2] + 1), REG_ADDR_SIZE);
@@ -229,7 +234,7 @@ char *genLEATypeInstr(char **tokens){
     free(src);
 
     binInstr[WORD_SIZE - OPCODE_SIZE] = '\0';
-    return binInstr; 
+    return binInstr;
 }
 
 
@@ -970,6 +975,13 @@ void runProgram(EXEC_INFO info){
             } else {
                 jumpOrBra = false; //branch was not taken
             }
+        }else if(strncmp(MOV, instr, OPCODE_SIZE) == 0) {
+
+            strncpy(rd, instr + OPCODE_SIZE, REG_ADDR_SIZE);
+            strncpy(rs, instr + OPCODE_SIZE + REG_ADDR_SIZE, REG_ADDR_SIZE);
+
+            result = ALU(ADDI_OP, regFile[binaryToDecimal(rs, REG_ADDR_SIZE)], "0000000000000000" , WORD_SIZE, 1);
+            strcpy(regFile[binaryToDecimal(rd, REG_ADDR_SIZE)], result);
         }
 
         if(strcmp(instr, "00000000000000000000000000000000") != 0)

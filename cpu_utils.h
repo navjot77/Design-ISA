@@ -96,7 +96,8 @@ char *genRTypeInstr(char **tokens);
 char *genITypeInstr(char **tokens);
 char *genJTypeInstr(char **tokens, int currMemLoc);
 char *genBranchTypeInstr(char **tokens, int currMemLoc);
-
+char *genLEATypeInstr(char **tokens);
+char *genMovTypeInstr(char **tokens);
 //conversion functions
 char *decimalToBinary(int toConvert, int numOfBits);
 char *decimalToComplementBinary(int toConvert, int numOfBits);
