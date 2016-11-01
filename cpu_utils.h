@@ -18,6 +18,7 @@
 #define SCALE_SIZE 4
 #define RTYPE_RD_SIZE 10
 #define JTA_SIZE 26
+#define MEM_ADDR_SIZE 16
 
 //memory start addresses
 #define TEXT_SEGMENT 512    //where text segment begins

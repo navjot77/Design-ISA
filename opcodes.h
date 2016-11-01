@@ -26,4 +26,7 @@ const char *MOD = "000101";
 //J Types
 const char *J = "010000";
 
+const char *MOV= "000111";
+const char *LEA= "000110";
+
 #endif //DESIGN_ISA_OPCODES_H

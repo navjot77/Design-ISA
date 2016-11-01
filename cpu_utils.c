@@ -176,6 +176,12 @@ char *convertInstrToBin(char *instr, int currMemLoc) {
     } else if (strcmp(tokens[0], "beq") == 0) {
         strcpy(binInstr, BEQ);
         strcpy(binInstr + OPCODE_SIZE, freeHandle = genBranchTypeInstr(tokens, currMemLoc));
+    }else if (strcmp(tokens[0], "mov") == 0) {
+        strcpy(binInstr, MOV);
+        strcpy(binInstr + OPCODE_SIZE, freeHandle = genMovTypeInstr(tokens, currMemLoc));
+    }else if (strcmp(tokens[0], "lea") == 0) {
+        strcpy(binInstr, LEA);
+        strcpy(binInstr + OPCODE_SIZE, freeHandle = genLEATypeInstr(tokens, currMemLoc));
     }
 
     binInstr[WORD_SIZE] = '\0';
@@ -186,6 +192,50 @@ char *convertInstrToBin(char *instr, int currMemLoc) {
     free(freeHandle);
     return binInstr;
 }
+
+// Opcode 6 bits, followed by Destination register 5 bits and Source Reg.
+char *genMovTypeInstr(char **tokens){
+    char *binInstr  = (char *)malloc((WORD_SIZE - OPCODE_SIZE) * sizeof(char) + 1);
+    mallocErrorCheck(binInstr);
+
+    char *dest = NULL, *src = NULL, *imm = NULL;
+
+    dest = decimalToBinary(atoi(tokens[1] + 1), REG_ADDR_SIZE);
+    src = decimalToBinary(atoi(tokens[2] + 1), REG_ADDR_SIZE);
+
+    strcpy(binInstr, dest);
+    strcat(binInstr, src);
+
+    free(dest);
+    free(src);
+
+    binInstr[WORD_SIZE - OPCODE_SIZE] = '\0';
+    return binInstr;
+}
+
+char *genLEATypeInstr(char **tokens){
+    char *binInstr  = (char *)malloc((WORD_SIZE - OPCODE_SIZE) * sizeof(char) + 1);
+    mallocErrorCheck(binInstr);
+
+    char *dest = NULL, *src = NULL;
+
+    dest = decimalToBinary(atoi(tokens[1] + 1), REG_ADDR_SIZE);
+    src = decimalToBinary(atoi(tokens[2] + 1), MEM_ADDR_SIZE);
+
+    strcpy(binInstr, dest);
+    strcat(binInstr, src);
+
+    free(dest);
+    free(src);
+
+    binInstr[WORD_SIZE - OPCODE_SIZE] = '\0';
+    return binInstr; 
+}
+
+
+
+
+
 
 char *genBranchTypeInstr(char **tokens, int currMemLoc) {
     char *encodedInstr  = (char *)malloc((WORD_SIZE - OPCODE_SIZE) * sizeof(char) + 1);
