@@ -59,7 +59,6 @@ EXEC_INFO initCPU() {
  * @param info : struct containing information for execution
  */
 void loadAndStoreInstrs(char *fileName, EXEC_INFO *info){
-    printf("**************");
     FILE *fp = NULL;
     char buff[250];
     int memLoc = TEXT_SEGMENT;
@@ -94,7 +93,6 @@ void loadAndStoreInstrs(char *fileName, EXEC_INFO *info){
  * @return :
  */
 char *convertInstrToBin(char *instr, int currMemLoc) {
-    printf("---------------0");
     char *tokens[MAX_TOKENS];
     char *token = NULL, *freeHandle = NULL;
     char *binInstr = (char *) malloc(sizeof(char) * WORD_SIZE + 1);
@@ -189,6 +187,7 @@ char *convertInstrToBin(char *instr, int currMemLoc) {
 
     binInstr[WORD_SIZE] = '\0';
 
+
     for (int i = 0; i < params + 1; i++)
         free(tokens[i]);
 
@@ -219,21 +218,25 @@ char *genMovTypeInstr(char **tokens){
 }
 
 char *genLEATypeInstr(char **tokens){
-    char *binInstr  = (char *)malloc((WORD_SIZE - OPCODE_SIZE) * sizeof(char) + 1);
+    char *rt = NULL, *immVal = NULL, *rs = NULL;
+    char *binInstr = (char *)malloc(sizeof(char) * (WORD_SIZE - OPCODE_SIZE) + 1);
+
     mallocErrorCheck(binInstr);
 
-    char *dest = NULL, *src = NULL;
+    rt = decimalToBinary(atoi(strchr(tokens[1], '$') + 1), REG_ADDR_SIZE);
 
-    dest = decimalToBinary(atoi(tokens[1] + 1), REG_ADDR_SIZE);
-    src = decimalToBinary(atoi(tokens[2] + 1), MEM_ADDR_SIZE);
+    char *leftParens = strchr(tokens[2], '[');
 
-    strcpy(binInstr, dest);
-    strcat(binInstr, src);
-
-    free(dest);
-    free(src);
-
+    char *rightParen = strchr(tokens[2], ']');
+    *rightParen='\0';
+    rs=decimalToBinary(atoi(leftParens+1),16);
+    strcpy(binInstr, rt);
+    strcat(binInstr, rs);
     binInstr[WORD_SIZE - OPCODE_SIZE] = '\0';
+
+    free(rs);
+    free(rt);
+
     return binInstr;
 }
 
@@ -981,6 +984,15 @@ void runProgram(EXEC_INFO info){
             strncpy(rs, instr + OPCODE_SIZE + REG_ADDR_SIZE, REG_ADDR_SIZE);
 
             result = ALU(ADDI_OP, regFile[binaryToDecimal(rs, REG_ADDR_SIZE)], "0000000000000000" , WORD_SIZE, 1);
+            strcpy(regFile[binaryToDecimal(rd, REG_ADDR_SIZE)], result);
+        }else if(strncmp(LEA, instr, OPCODE_SIZE) == 0) {
+
+            strncpy(rd, instr + OPCODE_SIZE, REG_ADDR_SIZE);
+            strncpy(rs, instr + OPCODE_SIZE + REG_ADDR_SIZE, IMM_SIZE);
+            result = ALU(ADDI_OP, rs, "0000000000000000" , IMM_SIZE, 1);
+            int result16bit=binaryToDecimal(result,16);
+            result=decimalToBinary(result16bit,WORD_SIZE);
+
             strcpy(regFile[binaryToDecimal(rd, REG_ADDR_SIZE)], result);
         }
 
